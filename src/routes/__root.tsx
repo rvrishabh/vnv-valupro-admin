@@ -3,9 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AuthContextProps } from "@/context/auth-context";
 import { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
-import Cookies from "js-cookie";
 import { AlertCircle, RefreshCw } from "lucide-react";
-import { Component, type ErrorInfo, type ReactNode, useEffect } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 
 interface MyRouterContext {
   auth: AuthContextProps;
@@ -85,18 +84,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 });
 
 function App() {
-  useEffect(() => {
-    const checkAuth = async () => {
-      const accessToken = Cookies.get("access_token");
-      if (accessToken) {
-        // Simulate an API call to validate the token or fetch user data
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
-    };
-
-    checkAuth();
-  }, []);
-
   return (
     <ErrorBoundary>
       <Outlet />

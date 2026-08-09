@@ -98,7 +98,12 @@ export function DataTable<TData, TValue>({
       columnVisibility,
       rowSelection,
       columnFilters,
-      pagination,
+      // Omit the key entirely (rather than passing `pagination: undefined`)
+      // when the caller doesn't control pagination, so react-table falls
+      // back to its own internally-managed state instead of leaving
+      // `table.getState().pagination` undefined, which crashes
+      // DataTablePagination.
+      ...(pagination ? { pagination } : {}),
       globalFilter: searchText,
     },
     enableRowSelection: enableRowSelection,

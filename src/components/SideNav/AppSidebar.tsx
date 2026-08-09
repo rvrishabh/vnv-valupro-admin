@@ -4,6 +4,7 @@ import { cn } from "../../lib/utils";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -11,10 +12,11 @@ import {
   useSidebar,
 } from "../ui/sidebar";
 import { NavMain, type NavMainItem } from "./NavMain";
-import { type User } from "./NavUser";
+import { NavUser, type User } from "./NavUser";
 interface SidebarShellProps extends React.ComponentProps<typeof Sidebar> {
   menuItems: NavMainItem[];
   logo?: string;
+  logoIcon?: string;
   footerContent?: React.ReactNode;
   user?: User;
   onLogout?: () => void;
@@ -26,13 +28,17 @@ interface SidebarShellProps extends React.ComponentProps<typeof Sidebar> {
 export function AppSideBar({
   menuItems,
   logo,
+  logoIcon,
   appName,
   iconClassName,
   to,
+  user,
+  onLogout,
   ...props
 }: SidebarShellProps) {
   const { navigate } = useRouter();
   const { state } = useSidebar();
+  const activeLogo = state === "collapsed" && logoIcon ? logoIcon : logo;
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -43,9 +49,9 @@ export function AppSideBar({
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5 hover:!bg-transparent"
             >
-              {logo ? (
+              {activeLogo ? (
                 <img
-                  src={logo}
+                  src={activeLogo}
                   alt="logo"
                   className={cn("cursor-pointer", iconClassName)}
                   onClick={() => {
@@ -70,16 +76,15 @@ export function AppSideBar({
         <NavMain items={menuItems} />
       </SidebarContent>
 
-      {/* <SidebarFooter className="pb-4 px-2 flex flex-col gap-2">
+      <SidebarFooter className="pb-4 px-2 flex flex-col gap-2">
         <NavUser
           onLogout={onLogout}
           user={{
-            name: user?.name || "WCTPay Admin",
-            email: user?.email || "guest@example.com",
-            avatar: "https://github.com/shadcn.png",
+            name: user?.name || "Admin",
+            email: user?.email || "",
           }}
         />
-      </SidebarFooter> */}
+      </SidebarFooter>
     </Sidebar>
   );
 }

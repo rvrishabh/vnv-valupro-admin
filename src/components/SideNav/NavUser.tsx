@@ -13,6 +13,16 @@ interface NavUserProps {
   onLogout?: () => void;
 }
 
+function getInitials(name?: string): string {
+  if (!name) return "A";
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}
+
 export function NavUser({ user, onLogout }: NavUserProps) {
   return (
     <SidebarMenu className="mt-2">
@@ -20,7 +30,9 @@ export function NavUser({ user, onLogout }: NavUserProps) {
         <div className="flex items-center gap-2">
           <Avatar className="h-8 w-8 rounded-lg">
             <AvatarImage src={user.avatar} alt={user.name} />
-            <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+            <AvatarFallback className="rounded-lg bg-sidebar-accent text-sidebar-foreground">
+              {getInitials(user.name)}
+            </AvatarFallback>
           </Avatar>
           <div className="grid flex-1 text-left text-sm leading-tight">
             <div className="truncate font-medium text-base">{user.name}</div>

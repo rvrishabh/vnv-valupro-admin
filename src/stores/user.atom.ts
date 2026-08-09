@@ -1,15 +1,13 @@
+import type { User } from "@/types/user.types";
 import { atomWithStorage } from "jotai/utils";
 
-export interface User {
-  id: string | null;
-  email: string | null;
-  name?: string | null;
-}
-
-const userAtom = atomWithStorage<User>("user", {
-  id: null,
-  email: null,
-  name: null,
+// getOnInit: true forces a synchronous localStorage read on first render.
+// Without it, jotai defers hydration to an effect (for SSR safety), so the
+// `_authenticated` route guard's beforeLoad — which runs before effects
+// flush — would see a stale `null` user on a fresh page load and bounce
+// straight back to /login even for an already-authenticated session.
+const userAtom = atomWithStorage<User | null>("user", null, undefined, {
+  getOnInit: true,
 });
 
 export default userAtom;
