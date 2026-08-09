@@ -9,50 +9,27 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedBranchesIndexRouteImport } from './routes/_authenticated/branches/index'
-import { Route as AuthenticatedInstitutionTypesIndexRouteImport } from './routes/_authenticated/institution-types/index'
-import { Route as AuthenticatedInstitutionsIndexRouteImport } from './routes/_authenticated/institutions/index'
-import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedValuationEstimatesIndexRouteImport } from './routes/_authenticated/valuation-estimates/index'
+import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
+import { Route as AuthenticatedInstitutionsIndexRouteImport } from './routes/_authenticated/institutions/index'
+import { Route as AuthenticatedInstitutionTypesIndexRouteImport } from './routes/_authenticated/institution-types/index'
+import { Route as AuthenticatedBranchesIndexRouteImport } from './routes/_authenticated/branches/index'
 
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedBranchesIndexRoute =
-  AuthenticatedBranchesIndexRouteImport.update({
-    id: '/branches/',
-    path: '/branches/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedInstitutionTypesIndexRoute =
-  AuthenticatedInstitutionTypesIndexRouteImport.update({
-    id: '/institution-types/',
-    path: '/institution-types/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedInstitutionsIndexRoute =
-  AuthenticatedInstitutionsIndexRouteImport.update({
-    id: '/institutions/',
-    path: '/institutions/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
-  id: '/users/',
-  path: '/users/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedValuationEstimatesIndexRoute =
@@ -61,15 +38,38 @@ const AuthenticatedValuationEstimatesIndexRoute =
     path: '/valuation-estimates/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
+  id: '/users/',
+  path: '/users/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedInstitutionsIndexRoute =
+  AuthenticatedInstitutionsIndexRouteImport.update({
+    id: '/institutions/',
+    path: '/institutions/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInstitutionTypesIndexRoute =
+  AuthenticatedInstitutionTypesIndexRouteImport.update({
+    id: '/institution-types/',
+    path: '/institution-types/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBranchesIndexRoute =
+  AuthenticatedBranchesIndexRouteImport.update({
+    id: '/branches/',
+    path: '/branches/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
-  '/branches/': typeof AuthenticatedBranchesIndexRoute
-  '/institution-types/': typeof AuthenticatedInstitutionTypesIndexRoute
-  '/institutions/': typeof AuthenticatedInstitutionsIndexRoute
-  '/users/': typeof AuthenticatedUsersIndexRoute
-  '/valuation-estimates/': typeof AuthenticatedValuationEstimatesIndexRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/branches': typeof AuthenticatedBranchesIndexRoute
+  '/institution-types': typeof AuthenticatedInstitutionTypesIndexRoute
+  '/institutions': typeof AuthenticatedInstitutionsIndexRoute
+  '/users': typeof AuthenticatedUsersIndexRoute
+  '/valuation-estimates': typeof AuthenticatedValuationEstimatesIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -94,13 +94,13 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
     | '/login'
-    | '/branches/'
-    | '/institution-types/'
-    | '/institutions/'
-    | '/users/'
-    | '/valuation-estimates/'
+    | '/'
+    | '/branches'
+    | '/institution-types'
+    | '/institutions'
+    | '/users'
+    | '/valuation-estimates'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -129,18 +129,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -150,39 +150,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/branches/': {
-      id: '/_authenticated/branches/'
-      path: '/branches'
-      fullPath: '/branches/'
-      preLoaderRoute: typeof AuthenticatedBranchesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/institution-types/': {
-      id: '/_authenticated/institution-types/'
-      path: '/institution-types'
-      fullPath: '/institution-types/'
-      preLoaderRoute: typeof AuthenticatedInstitutionTypesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/institutions/': {
-      id: '/_authenticated/institutions/'
-      path: '/institutions'
-      fullPath: '/institutions/'
-      preLoaderRoute: typeof AuthenticatedInstitutionsIndexRouteImport
+    '/_authenticated/valuation-estimates/': {
+      id: '/_authenticated/valuation-estimates/'
+      path: '/valuation-estimates'
+      fullPath: '/valuation-estimates'
+      preLoaderRoute: typeof AuthenticatedValuationEstimatesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/users/': {
       id: '/_authenticated/users/'
       path: '/users'
-      fullPath: '/users/'
+      fullPath: '/users'
       preLoaderRoute: typeof AuthenticatedUsersIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/valuation-estimates/': {
-      id: '/_authenticated/valuation-estimates/'
-      path: '/valuation-estimates'
-      fullPath: '/valuation-estimates/'
-      preLoaderRoute: typeof AuthenticatedValuationEstimatesIndexRouteImport
+    '/_authenticated/institutions/': {
+      id: '/_authenticated/institutions/'
+      path: '/institutions'
+      fullPath: '/institutions'
+      preLoaderRoute: typeof AuthenticatedInstitutionsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/institution-types/': {
+      id: '/_authenticated/institution-types/'
+      path: '/institution-types'
+      fullPath: '/institution-types'
+      preLoaderRoute: typeof AuthenticatedInstitutionTypesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/branches/': {
+      id: '/_authenticated/branches/'
+      path: '/branches'
+      fullPath: '/branches'
+      preLoaderRoute: typeof AuthenticatedBranchesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
