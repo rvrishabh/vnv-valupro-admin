@@ -1,4 +1,10 @@
-import { usersApi } from "@/api/users.api";
+import {
+  useApproveUserMutation,
+  useCreateUserMutation,
+  useDeactivateUserMutation,
+  useUpdateUserMutation,
+} from "@/api/mutations/users";
+import { useUsersQuery } from "@/api/queries/users";
 import { AlertPopup } from "@/components/AlertPopup/AlertPopup";
 import { DataTable } from "@/components/DataTable/data-table";
 import { DataTableColumnHeader } from "@/components/DataTable/data-table-column-header";
@@ -21,16 +27,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ApiError } from "@/lib/api-client";
-import type { User } from "@/types/user.types";
+import type { User } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconBan, IconCircleCheck, IconPencil, IconPlus } from "@tabler/icons-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import type { ColumnDef, PaginationState, SortingState } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { z } from "zod";
 
 export const Route = createFileRoute("/_authenticated/users/")({
@@ -61,7 +64,6 @@ function buildSort(sorting: SortingState): string | undefined {
 }
 
 function UsersPage() {
-  const queryClient = useQueryClient();
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 20,
@@ -71,25 +73,18 @@ function UsersPage() {
   const [editing, setEditing] = useState<User | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const listQuery = useQuery({
-    queryKey: ["users", pagination, sorting, searchText],
-    queryFn: () =>
-      usersApi.list({
-        page: pagination.pageIndex + 1,
-        limit: pagination.pageSize,
-        sort: buildSort(sorting),
-        search: searchText,
-      }),
+  const listQuery = useUsersQuery({
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    sort: buildSort(sorting),
+    search: searchText,
   });
 
   // No dedicated /roles endpoint exists on the backend, so we derive the
   // available WEB-channel role options from roles already seen on users
   // (e.g. the seeded ADMIN role). New roles introduced only via DB seed
   // won't appear here until at least one user has that role.
-  const rolesLookupQuery = useQuery({
-    queryKey: ["users", "roles-lookup"],
-    queryFn: () => usersApi.list({ page: 1, limit: 100 }),
-  });
+  const rolesLookupQuery = useUsersQuery({ page: 1, limit: 100 });
   const roleOptions = useMemo(() => {
     const map = new Map<string, string>();
     for (const u of rolesLookupQuery.data?.data ?? []) {
@@ -123,62 +118,31 @@ function UsersPage() {
     setModalOpen(true);
   };
 
-  const createMutation = useMutation({
-    mutationFn: (values: CreateFormValues) =>
-      usersApi.create({
+  const createMutation = useCreateUserMutation();
+  const updateMutation = useUpdateUserMutation();
+  const approveMutation = useApproveUserMutation();
+  const deactivateMutation = useDeactivateUserMutation();
+
+  const onCreateSubmit = (values: CreateFormValues) =>
+    createMutation.mutate(
+      {
         name: values.name,
         email: values.email,
         roleId: values.roleId,
         password: values.password!,
         mobile: values.mobile || undefined,
-      }),
-    onSuccess: () => {
-      toast.success("Staff user created");
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      setModalOpen(false);
-    },
-    onError: (err) => {
-      toast.error(err instanceof ApiError ? err.message : "Something went wrong");
-    },
-  });
+      },
+      { onSuccess: () => setModalOpen(false) },
+    );
 
-  const updateMutation = useMutation({
-    mutationFn: (values: EditFormValues) =>
-      usersApi.update(editing!.id, {
-        name: values.name,
-        mobile: values.mobile || undefined,
-      }),
-    onSuccess: () => {
-      toast.success("User updated");
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      setModalOpen(false);
-    },
-    onError: (err) => {
-      toast.error(err instanceof ApiError ? err.message : "Something went wrong");
-    },
-  });
-
-  const approveMutation = useMutation({
-    mutationFn: (id: string) => usersApi.approve(id),
-    onSuccess: () => {
-      toast.success("User approved");
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-    },
-    onError: (err) => {
-      toast.error(err instanceof ApiError ? err.message : "Unable to approve");
-    },
-  });
-
-  const deactivateMutation = useMutation({
-    mutationFn: (id: string) => usersApi.deactivate(id),
-    onSuccess: () => {
-      toast.success("User deactivated");
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-    },
-    onError: (err) => {
-      toast.error(err instanceof ApiError ? err.message : "Unable to deactivate");
-    },
-  });
+  const onEditSubmit = (values: EditFormValues) =>
+    updateMutation.mutate(
+      {
+        id: editing!.id,
+        data: { name: values.name, mobile: values.mobile || undefined },
+      },
+      { onSuccess: () => setModalOpen(false) },
+    );
 
   const columns = useMemo<ColumnDef<User>[]>(
     () => [
@@ -320,9 +284,7 @@ function UsersPage() {
         {editing ? (
           <Form {...editForm}>
             <form
-              onSubmit={editForm.handleSubmit((values) =>
-                updateMutation.mutate(values),
-              )}
+              onSubmit={editForm.handleSubmit(onEditSubmit)}
               className="space-y-2 pb-2"
             >
               <FormInput control={editForm.control} name="name" label="Name" required />
@@ -345,9 +307,7 @@ function UsersPage() {
         ) : (
           <Form {...createForm}>
             <form
-              onSubmit={createForm.handleSubmit((values) =>
-                createMutation.mutate(values),
-              )}
+              onSubmit={createForm.handleSubmit(onCreateSubmit)}
               className="space-y-2 pb-2"
             >
               <FormInput control={createForm.control} name="name" label="Name" required />

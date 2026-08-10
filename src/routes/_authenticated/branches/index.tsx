@@ -1,5 +1,13 @@
-import { branchesApi } from "@/api/branches.api";
-import { institutionsApi } from "@/api/institutions.api";
+import {
+  useCreateManualBranchMutation,
+  useRejectBranchMutation,
+  useVerifyBranchMutation,
+} from "@/api/mutations/branches";
+import {
+  useBranchesQuery,
+  useBranchVerificationQueueQuery,
+} from "@/api/queries/branches";
+import { useInstitutionsQuery } from "@/api/queries/institutions";
 import { AlertPopup } from "@/components/AlertPopup/AlertPopup";
 import { DataTable } from "@/components/DataTable/data-table";
 import { DataTableColumnHeader } from "@/components/DataTable/data-table-column-header";
@@ -23,16 +31,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ApiError } from "@/lib/api-client";
-import type { Branch } from "@/types/branch.types";
+import type { Branch } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconCheck, IconPlus, IconX } from "@tabler/icons-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import type { ColumnDef, PaginationState, SortingState } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { z } from "zod";
 
 export const Route = createFileRoute("/_authenticated/branches/")({
@@ -56,7 +61,6 @@ function buildSort(sorting: SortingState): string | undefined {
 }
 
 function BranchesPage() {
-  const queryClient = useQueryClient();
   const [view, setView] = useState<"all" | "queue">("all");
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -66,28 +70,19 @@ function BranchesPage() {
   const [searchText, setSearchText] = useState<string>();
   const [modalOpen, setModalOpen] = useState(false);
 
-  const institutionsQuery = useQuery({
-    queryKey: ["institutions", "all"],
-    queryFn: () => institutionsApi.list({ page: 1, limit: 200 }),
-  });
+  const institutionsQuery = useInstitutionsQuery({ page: 1, limit: 200 });
 
-  const listQuery = useQuery({
-    queryKey: ["branches", pagination, sorting, searchText],
-    queryFn: () =>
-      branchesApi.list({
-        page: pagination.pageIndex + 1,
-        limit: pagination.pageSize,
-        sort: buildSort(sorting),
-        search: searchText,
-      }),
-    enabled: view === "all",
-  });
+  const listQuery = useBranchesQuery(
+    {
+      page: pagination.pageIndex + 1,
+      limit: pagination.pageSize,
+      sort: buildSort(sorting),
+      search: searchText,
+    },
+    { enabled: view === "all" },
+  );
 
-  const queueQuery = useQuery({
-    queryKey: ["branches", "verification-queue"],
-    queryFn: () => branchesApi.verificationQueue(),
-    enabled: view === "queue",
-  });
+  const queueQuery = useBranchVerificationQueueQuery({ enabled: view === "queue" });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -113,39 +108,12 @@ function BranchesPage() {
     setModalOpen(true);
   };
 
-  const createMutation = useMutation({
-    mutationFn: (values: FormValues) => branchesApi.createManual(values),
-    onSuccess: () => {
-      toast.success("Branch created");
-      queryClient.invalidateQueries({ queryKey: ["branches"] });
-      setModalOpen(false);
-    },
-    onError: (err) => {
-      toast.error(err instanceof ApiError ? err.message : "Something went wrong");
-    },
-  });
+  const createMutation = useCreateManualBranchMutation();
+  const verifyMutation = useVerifyBranchMutation();
+  const rejectMutation = useRejectBranchMutation();
 
-  const verifyMutation = useMutation({
-    mutationFn: (id: string) => branchesApi.verify(id),
-    onSuccess: () => {
-      toast.success("Branch verified");
-      queryClient.invalidateQueries({ queryKey: ["branches"] });
-    },
-    onError: (err) => {
-      toast.error(err instanceof ApiError ? err.message : "Unable to verify");
-    },
-  });
-
-  const rejectMutation = useMutation({
-    mutationFn: (id: string) => branchesApi.reject(id),
-    onSuccess: () => {
-      toast.success("Branch rejected");
-      queryClient.invalidateQueries({ queryKey: ["branches"] });
-    },
-    onError: (err) => {
-      toast.error(err instanceof ApiError ? err.message : "Unable to reject");
-    },
-  });
+  const onSubmit = (values: FormValues) =>
+    createMutation.mutate(values, { onSuccess: () => setModalOpen(false) });
 
   const baseColumns = useMemo<ColumnDef<Branch>[]>(
     () => [
@@ -317,7 +285,7 @@ function BranchesPage() {
       <Modal open={modalOpen} onOpenChange={setModalOpen} title="New Branch">
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit((values) => createMutation.mutate(values))}
+            onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-2 pb-2"
           >
             <FormField

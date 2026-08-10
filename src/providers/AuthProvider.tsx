@@ -1,12 +1,13 @@
-import { authApi } from "@/api/auth.api";
+import { useLogoutMutation } from "@/api/mutations/auth";
 import { AuthContext } from "@/context/auth-context";
 import userAtom from "@/stores/user.atom";
-import type { User } from "@/types/user.types";
+import type { User } from "@/types";
 import { useAtom } from "jotai/react";
 import { useCallback, useEffect } from "react";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useAtom(userAtom);
+  const logoutMutation = useLogoutMutation();
 
   const login = useCallback(
     (loggedInUser: User) => {
@@ -17,12 +18,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await authApi.logout();
+      await logoutMutation.mutateAsync();
     } catch {
       // ignore network errors on logout, still clear local state
     }
     setUser(null);
-  }, [setUser]);
+  }, [setUser, logoutMutation]);
 
   useEffect(() => {
     const handleUnauthorized = () => {

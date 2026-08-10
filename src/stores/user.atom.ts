@@ -1,4 +1,4 @@
-import type { User } from "@/types/user.types";
+import type { User } from "@/types";
 import { atomWithStorage } from "jotai/utils";
 
 // getOnInit: true forces a synchronous localStorage read on first render.

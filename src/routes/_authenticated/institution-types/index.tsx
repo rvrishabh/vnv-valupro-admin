@@ -1,4 +1,9 @@
-import { institutionTypesApi } from "@/api/institution-types.api";
+import {
+  useCreateInstitutionTypeMutation,
+  useDeleteInstitutionTypeMutation,
+  useUpdateInstitutionTypeMutation,
+} from "@/api/mutations/institution-types";
+import { useInstitutionTypesQuery } from "@/api/queries/institution-types";
 import { AlertPopup } from "@/components/AlertPopup/AlertPopup";
 import { DataTable } from "@/components/DataTable/data-table";
 import { DataTableColumnHeader } from "@/components/DataTable/data-table-column-header";
@@ -14,16 +19,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { ApiError } from "@/lib/api-client";
-import type { InstitutionType } from "@/types/institution.types";
+import type { InstitutionType } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconPencil, IconPlus, IconTrash } from "@tabler/icons-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { z } from "zod";
 
 export const Route = createFileRoute("/_authenticated/institution-types/")({
@@ -43,7 +45,6 @@ function buildSort(sorting: SortingState): string | undefined {
 }
 
 function InstitutionTypesPage() {
-  const queryClient = useQueryClient();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [searchText, setSearchText] = useState<string>();
   const [editing, setEditing] = useState<InstitutionType | null>(null);
@@ -52,14 +53,10 @@ function InstitutionTypesPage() {
   // GET /institution-types returns a plain (non-paginated) array — fetch a
   // generous limit and let the table render everything without server-side
   // pagination (see the comment in api/institution-types.api.ts).
-  const listQuery = useQuery({
-    queryKey: ["institution-types", sorting, searchText],
-    queryFn: () =>
-      institutionTypesApi.list({
-        limit: 100,
-        sort: buildSort(sorting),
-        search: searchText,
-      }),
+  const listQuery = useInstitutionTypesQuery({
+    limit: 100,
+    sort: buildSort(sorting),
+    search: searchText,
   });
 
   const form = useForm<FormValues>({
@@ -79,34 +76,25 @@ function InstitutionTypesPage() {
     setModalOpen(true);
   };
 
-  const saveMutation = useMutation({
-    mutationFn: (values: FormValues) =>
-      editing
-        ? institutionTypesApi.update(editing.id, values)
-        : institutionTypesApi.create({
-            name: values.name,
-            description: values.description,
-          }),
-    onSuccess: () => {
-      toast.success(editing ? "Institution type updated" : "Institution type created");
-      queryClient.invalidateQueries({ queryKey: ["institution-types"] });
-      setModalOpen(false);
-    },
-    onError: (err) => {
-      toast.error(err instanceof ApiError ? err.message : "Something went wrong");
-    },
-  });
+  const createMutation = useCreateInstitutionTypeMutation();
+  const updateMutation = useUpdateInstitutionTypeMutation();
+  const deleteMutation = useDeleteInstitutionTypeMutation();
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => institutionTypesApi.remove(id),
-    onSuccess: () => {
-      toast.success("Institution type deleted");
-      queryClient.invalidateQueries({ queryKey: ["institution-types"] });
-    },
-    onError: (err) => {
-      toast.error(err instanceof ApiError ? err.message : "Unable to delete");
-    },
-  });
+  const saveMutation = editing ? updateMutation : createMutation;
+
+  const onSubmit = (values: FormValues) => {
+    if (editing) {
+      updateMutation.mutate(
+        { id: editing.id, data: values },
+        { onSuccess: () => setModalOpen(false) },
+      );
+    } else {
+      createMutation.mutate(
+        { name: values.name, description: values.description },
+        { onSuccess: () => setModalOpen(false) },
+      );
+    }
+  };
 
   const columns = useMemo<ColumnDef<InstitutionType>[]>(
     () => [
@@ -214,7 +202,7 @@ function InstitutionTypesPage() {
       >
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit((values) => saveMutation.mutate(values))}
+            onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-2 pb-2"
           >
             <FormInput control={form.control} name="name" label="Name" required />

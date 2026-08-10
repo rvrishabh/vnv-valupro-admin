@@ -1,11 +1,14 @@
-import { authApi } from "@/api/auth.api";
+import {
+  useLoginMutation,
+  useLogoutMutation,
+} from "@/api/mutations/auth";
 import logoFullLight from "@/assets/logo-full-light.png";
 import logoFull from "@/assets/logo-full.png";
 import FormInput from "@/components/Form/FormInput";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { UseAuth } from "@/hooks/useAuth";
-import { ApiError } from "@/lib/api-client";
+import { ApiError } from "@/lib/axios";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -32,7 +35,8 @@ function LoginPage() {
   const { login } = UseAuth();
   const { redirect: redirectTo } = Route.useSearch();
   const [formError, setFormError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const loginMutation = useLoginMutation();
+  const logoutMutation = useLogoutMutation();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -41,11 +45,10 @@ function LoginPage() {
 
   const onSubmit = async (values: LoginFormValues) => {
     setFormError(null);
-    setIsSubmitting(true);
     try {
-      const { user } = await authApi.login(values);
+      const { user } = await loginMutation.mutateAsync(values);
       if (user.role?.name !== "ADMIN") {
-        await authApi.logout();
+        await logoutMutation.mutateAsync();
         setFormError("This portal is for administrators only.");
         return;
       }
@@ -61,8 +64,6 @@ function LoginPage() {
       setFormError(
         err instanceof ApiError ? err.message : "Unable to sign in. Please try again.",
       );
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -132,9 +133,9 @@ function LoginPage() {
               <Button
                 type="submit"
                 className="w-full mt-4"
-                disabled={isSubmitting}
+                disabled={loginMutation.isPending || logoutMutation.isPending}
               >
-                {isSubmitting ? "Signing in…" : "Sign in"}
+                {loginMutation.isPending ? "Signing in…" : "Sign in"}
               </Button>
             </form>
           </Form>

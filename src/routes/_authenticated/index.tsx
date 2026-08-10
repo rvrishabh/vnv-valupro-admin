@@ -1,8 +1,11 @@
-import { branchesApi } from "@/api/branches.api";
-import { institutionsApi } from "@/api/institutions.api";
-import { institutionTypesApi } from "@/api/institution-types.api";
-import { usersApi } from "@/api/users.api";
-import { valuationEstimatesApi } from "@/api/valuation-estimates.api";
+import {
+  useBranchesQuery,
+  useBranchVerificationQueueQuery,
+} from "@/api/queries/branches";
+import { useInstitutionTypesQuery } from "@/api/queries/institution-types";
+import { useInstitutionsQuery } from "@/api/queries/institutions";
+import { useUsersQuery } from "@/api/queries/users";
+import { useValuationEstimatesQuery } from "@/api/queries/valuation-estimates";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UseAuth } from "@/hooks/useAuth";
 import {
@@ -12,7 +15,6 @@ import {
   IconShieldCheck,
   IconUsers,
 } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type { ComponentType } from "react";
 
@@ -52,32 +54,14 @@ function StatCard({ title, value, icon: Icon, isLoading, to, accent }: StatCardP
 function DashboardPage() {
   const { user } = UseAuth();
 
-  const institutionsQuery = useQuery({
-    queryKey: ["institutions", "count"],
-    queryFn: () => institutionsApi.list({ page: 1, limit: 1 }),
-  });
+  const institutionsQuery = useInstitutionsQuery({ page: 1, limit: 1 });
   // /institution-types returns a plain array (no total), so we fetch a
   // generous limit and use its length as the count.
-  const institutionTypesQuery = useQuery({
-    queryKey: ["institution-types", "count"],
-    queryFn: () => institutionTypesApi.list({ limit: 100 }),
-  });
-  const branchesQuery = useQuery({
-    queryKey: ["branches", "count"],
-    queryFn: () => branchesApi.list({ page: 1, limit: 1 }),
-  });
-  const verificationQueueQuery = useQuery({
-    queryKey: ["branches", "verification-queue"],
-    queryFn: () => branchesApi.verificationQueue(),
-  });
-  const usersQuery = useQuery({
-    queryKey: ["users", "count"],
-    queryFn: () => usersApi.list({ page: 1, limit: 1 }),
-  });
-  const valuationEstimatesQuery = useQuery({
-    queryKey: ["valuation-estimates", "count"],
-    queryFn: () => valuationEstimatesApi.list({ page: 1, limit: 1 }),
-  });
+  const institutionTypesQuery = useInstitutionTypesQuery({ limit: 100 });
+  const branchesQuery = useBranchesQuery({ page: 1, limit: 1 });
+  const verificationQueueQuery = useBranchVerificationQueueQuery();
+  const usersQuery = useUsersQuery({ page: 1, limit: 1 });
+  const valuationEstimatesQuery = useValuationEstimatesQuery({ page: 1, limit: 1 });
 
   return (
     <div className="flex flex-col gap-6">

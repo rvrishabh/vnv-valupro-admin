@@ -1,3 +1,9 @@
+import type {
+  createManualBranchPayloadSchema,
+  updateBranchPayloadSchema,
+} from "@/schemas/branch.schema";
+import type { z } from "zod";
+
 export interface Branch {
   id: string;
   institutionId: string;
@@ -15,18 +21,10 @@ export interface Branch {
   createdAt: string;
 }
 
-export interface CreateManualBranchPayload {
-  institutionId: string;
-  branchName: string;
-  city: string;
-  state: string;
-  district?: string;
-  address?: string;
-}
-
-export interface UpdateBranchPayload extends Partial<CreateManualBranchPayload> {
-  ifscCode?: string;
-}
+export type CreateManualBranchPayload = z.infer<
+  typeof createManualBranchPayloadSchema
+>;
+export type UpdateBranchPayload = z.infer<typeof updateBranchPayloadSchema>;
 
 export interface ListBranchesQuery {
   page?: number;

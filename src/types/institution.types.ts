@@ -1,3 +1,13 @@
+import type {
+  createInstitutionTypePayloadSchema,
+  updateInstitutionTypePayloadSchema,
+} from "@/schemas/institution-type.schema";
+import type {
+  createInstitutionPayloadSchema,
+  updateInstitutionPayloadSchema,
+} from "@/schemas/institution.schema";
+import type { z } from "zod";
+
 export interface InstitutionType {
   id: string;
   name: string;
@@ -5,12 +15,12 @@ export interface InstitutionType {
   createdAt: string;
 }
 
-export interface CreateInstitutionTypePayload {
-  name: string;
-  description?: string;
-}
-
-export type UpdateInstitutionTypePayload = Partial<CreateInstitutionTypePayload>;
+export type CreateInstitutionTypePayload = z.infer<
+  typeof createInstitutionTypePayloadSchema
+>;
+export type UpdateInstitutionTypePayload = z.infer<
+  typeof updateInstitutionTypePayloadSchema
+>;
 
 export interface Institution {
   id: string;
@@ -22,15 +32,12 @@ export interface Institution {
   createdAt: string;
 }
 
-export interface CreateInstitutionPayload {
-  name: string;
-  code: string;
-  institutionTypeId: string;
-}
-
-export interface UpdateInstitutionPayload extends Partial<CreateInstitutionPayload> {
-  isActive?: boolean;
-}
+export type CreateInstitutionPayload = z.infer<
+  typeof createInstitutionPayloadSchema
+>;
+export type UpdateInstitutionPayload = z.infer<
+  typeof updateInstitutionPayloadSchema
+>;
 
 export interface ListInstitutionsQuery {
   page?: number;

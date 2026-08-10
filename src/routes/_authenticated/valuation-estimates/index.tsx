@@ -1,8 +1,7 @@
-import { valuationEstimatesApi } from "@/api/valuation-estimates.api";
+import { useValuationEstimatesQuery } from "@/api/queries/valuation-estimates";
 import { DataTable } from "@/components/DataTable/data-table";
 import { DataTableColumnHeader } from "@/components/DataTable/data-table-column-header";
-import type { ValuationEstimate } from "@/types/valuation-estimate.types";
-import { useQuery } from "@tanstack/react-query";
+import type { ValuationEstimate } from "@/types";
 import { createFileRoute } from "@tanstack/react-router";
 import type { ColumnDef, PaginationState, SortingState } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
@@ -31,15 +30,11 @@ function ValuationEstimatesPage() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [searchText, setSearchText] = useState<string>();
 
-  const listQuery = useQuery({
-    queryKey: ["valuation-estimates", pagination, sorting, searchText],
-    queryFn: () =>
-      valuationEstimatesApi.list({
-        page: pagination.pageIndex + 1,
-        limit: pagination.pageSize,
-        sort: buildSort(sorting),
-        search: searchText,
-      }),
+  const listQuery = useValuationEstimatesQuery({
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    sort: buildSort(sorting),
+    search: searchText,
   });
 
   const columns = useMemo<ColumnDef<ValuationEstimate>[]>(

@@ -1,3 +1,10 @@
+import type {
+  createUserPayloadSchema,
+  updateUserBranchPayloadSchema,
+  updateUserPayloadSchema,
+} from "@/schemas/user.schema";
+import type { z } from "zod";
+
 export const LoginChannel = {
   WEB: "WEB",
   MOBILE: "MOBILE",
@@ -56,21 +63,11 @@ export interface User {
   updatedAt: string;
 }
 
-export interface CreateUserPayload {
-  name: string;
-  email: string;
-  roleId: string;
-  password: string;
-  mobile?: string;
-}
-
-export interface UpdateUserPayload {
-  name?: string;
-  roleId?: string;
-  password?: string;
-  mobile?: string;
-  isActive?: boolean;
-}
+export type CreateUserPayload = z.infer<typeof createUserPayloadSchema>;
+export type UpdateUserPayload = z.infer<typeof updateUserPayloadSchema>;
+export type UpdateUserBranchPayload = z.infer<
+  typeof updateUserBranchPayloadSchema
+>;
 
 export interface ListUsersQuery {
   page?: number;

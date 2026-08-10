@@ -1,5 +1,10 @@
-import { institutionTypesApi } from "@/api/institution-types.api";
-import { institutionsApi } from "@/api/institutions.api";
+import {
+  useCreateInstitutionMutation,
+  useDeleteInstitutionMutation,
+  useUpdateInstitutionMutation,
+} from "@/api/mutations/institutions";
+import { useInstitutionTypesQuery } from "@/api/queries/institution-types";
+import { useInstitutionsQuery } from "@/api/queries/institutions";
 import { AlertPopup } from "@/components/AlertPopup/AlertPopup";
 import { DataTable } from "@/components/DataTable/data-table";
 import { DataTableColumnHeader } from "@/components/DataTable/data-table-column-header";
@@ -22,11 +27,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ApiError } from "@/lib/api-client";
-import type { Institution } from "@/types/institution.types";
+import type { Institution } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconPencil, IconPlus, IconTrash } from "@tabler/icons-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import type { ColumnDef, PaginationState, SortingState } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
@@ -52,7 +55,6 @@ function buildSort(sorting: SortingState): string | undefined {
 }
 
 function InstitutionsPage() {
-  const queryClient = useQueryClient();
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 20,
@@ -62,20 +64,13 @@ function InstitutionsPage() {
   const [editing, setEditing] = useState<Institution | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const typesQuery = useQuery({
-    queryKey: ["institution-types", "all"],
-    queryFn: () => institutionTypesApi.list({ page: 1, limit: 100 }),
-  });
+  const typesQuery = useInstitutionTypesQuery({ page: 1, limit: 100 });
 
-  const listQuery = useQuery({
-    queryKey: ["institutions", pagination, sorting, searchText],
-    queryFn: () =>
-      institutionsApi.list({
-        page: pagination.pageIndex + 1,
-        limit: pagination.pageSize,
-        sort: buildSort(sorting),
-        search: searchText,
-      }),
+  const listQuery = useInstitutionsQuery({
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    sort: buildSort(sorting),
+    search: searchText,
   });
 
   const form = useForm<FormValues>({
@@ -99,42 +94,34 @@ function InstitutionsPage() {
     setModalOpen(true);
   };
 
-  const saveMutation = useMutation({
-    mutationFn: (values: FormValues) =>
-      editing
-        ? institutionsApi.update(editing.id, values)
-        : institutionsApi.create(values),
-    onSuccess: () => {
-      toast.success(editing ? "Institution updated" : "Institution created");
-      queryClient.invalidateQueries({ queryKey: ["institutions"] });
-      setModalOpen(false);
-    },
-    onError: (err) => {
-      toast.error(err instanceof ApiError ? err.message : "Something went wrong");
-    },
-  });
+  const createMutation = useCreateInstitutionMutation();
+  const updateMutation = useUpdateInstitutionMutation();
+  const deleteMutation = useDeleteInstitutionMutation();
 
-  const toggleActiveMutation = useMutation({
-    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
-      institutionsApi.update(id, { isActive }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["institutions"] });
-    },
-    onError: (err) => {
-      toast.error(err instanceof ApiError ? err.message : "Unable to update status");
-    },
-  });
+  const saveMutation = editing ? updateMutation : createMutation;
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => institutionsApi.remove(id),
-    onSuccess: () => {
-      toast.success("Institution deleted");
-      queryClient.invalidateQueries({ queryKey: ["institutions"] });
-    },
-    onError: (err) => {
-      toast.error(err instanceof ApiError ? err.message : "Unable to delete");
-    },
-  });
+  const onSubmit = (values: FormValues) => {
+    if (editing) {
+      updateMutation.mutate(
+        { id: editing.id, data: values },
+        {
+          onSuccess: () => {
+            toast.success("Institution updated");
+            setModalOpen(false);
+          },
+        },
+      );
+    } else {
+      createMutation.mutate(values, { onSuccess: () => setModalOpen(false) });
+    }
+  };
+
+  const toggleActiveMutation = useUpdateInstitutionMutation();
+  const toggleActive = (institution: Institution) =>
+    toggleActiveMutation.mutate({
+      id: institution.id,
+      data: { isActive: !institution.isActive },
+    });
 
   const columns = useMemo<ColumnDef<Institution>[]>(
     () => [
@@ -167,10 +154,7 @@ function InstitutionsPage() {
             className="cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
-              toggleActiveMutation.mutate({
-                id: row.original.id,
-                isActive: !row.original.isActive,
-              });
+              toggleActive(row.original);
             }}
           >
             {row.original.isActive ? "Active" : "Inactive"}
@@ -261,7 +245,7 @@ function InstitutionsPage() {
       >
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit((values) => saveMutation.mutate(values))}
+            onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-2 pb-2"
           >
             <FormInput control={form.control} name="name" label="Name" required />
