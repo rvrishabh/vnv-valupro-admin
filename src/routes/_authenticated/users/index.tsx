@@ -4,6 +4,7 @@ import {
   useDeactivateUserMutation,
   useUpdateUserMutation,
 } from "@/api/mutations/users";
+import { useRolesQuery } from "@/api/queries/roles";
 import { useUsersQuery } from "@/api/queries/users";
 import { AlertPopup } from "@/components/AlertPopup/AlertPopup";
 import { DataTable } from "@/components/DataTable/data-table";
@@ -80,18 +81,19 @@ function UsersPage() {
     search: searchText,
   });
 
-  // No dedicated /roles endpoint exists on the backend, so we derive the
-  // available WEB-channel role options from roles already seen on users
-  // (e.g. the seeded ADMIN role). New roles introduced only via DB seed
-  // won't appear here until at least one user has that role.
-  const rolesLookupQuery = useUsersQuery({ page: 1, limit: 100 });
-  const roleOptions = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const u of rolesLookupQuery.data?.data ?? []) {
-      if (u.role) map.set(u.role.id, u.role.name);
-    }
-    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
-  }, [rolesLookupQuery.data]);
+  const rolesQuery = useRolesQuery({
+    page: 1,
+    limit: 100,
+    loginChannel: "WEB",
+  });
+  const roleOptions = useMemo(
+    () =>
+      (rolesQuery.data?.data ?? []).map((role) => ({
+        id: role.id,
+        name: role.name,
+      })),
+    [rolesQuery.data],
+  );
 
   const createForm = useForm<CreateFormValues>({
     resolver: zodResolver(createSchema),

@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { type LucideIcon } from "lucide-react";
+import type { ComponentType } from "react";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -8,10 +8,18 @@ import {
   SidebarMenuItem,
 } from "../ui/sidebar";
 
+/**
+ * The menu mixes Tabler and Lucide icons. Their exported types disagree on the
+ * ref (Tabler refs an `Icon`, Lucide an `SVGSVGElement`), so neither library's
+ * type accepts the other. Only the props this component actually passes are
+ * required here, which both satisfy.
+ */
+export type NavIcon = ComponentType<{ className?: string }>;
+
 export interface NavMainItem {
   title: string;
   url: string;
-  icon?: LucideIcon;
+  icon?: NavIcon;
 }
 
 export function NavMain({ items }: { items: NavMainItem[] }) {

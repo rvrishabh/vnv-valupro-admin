@@ -9,7 +9,9 @@ import {
   IconBuildingBank,
   IconBuildingSkyscraper,
   IconCalculator,
+  IconFileText,
   IconLayoutDashboard,
+  IconShieldLock,
   IconUsers,
 } from "@tabler/icons-react";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
@@ -17,6 +19,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 const menuItems: NavMainItem[] = [
   { title: "Dashboard", url: "/", icon: IconLayoutDashboard },
   { title: "Users", url: "/users", icon: IconUsers },
+  { title: "Roles", url: "/roles", icon: IconShieldLock },
   {
     title: "Institutions",
     url: "/institutions",
@@ -33,6 +36,7 @@ const menuItems: NavMainItem[] = [
     url: "/valuation-estimates",
     icon: IconCalculator,
   },
+  { title: "Valuations", url: "/valuations", icon: IconFileText },
 ];
 
 export const Route = createFileRoute("/_authenticated")({
