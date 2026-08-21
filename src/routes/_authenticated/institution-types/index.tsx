@@ -8,17 +8,10 @@ import { AlertPopup } from "@/components/AlertPopup/AlertPopup";
 import { DataTable } from "@/components/DataTable/data-table";
 import { DataTableColumnHeader } from "@/components/DataTable/data-table-column-header";
 import FormInput from "@/components/Form/FormInput";
+import { FormTextArea } from "@/components/Form/FormTextArea";
 import { Modal } from "@/components/Modal";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
+import { Form } from "@/components/ui/form";
 import type { InstitutionType } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconPencil, IconPlus, IconTrash } from "@tabler/icons-react";
@@ -206,18 +199,11 @@ function InstitutionTypesPage() {
             className="space-y-2 pb-2"
           >
             <FormInput control={form.control} name="name" label="Name" required />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem className="w-full pb-2">
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} placeholder="Optional description" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <FormTextArea
+              {...form.register("description")}
+              label="Description"
+              placeholder="Optional description"
+              error={form.formState.errors.description?.message}
             />
             <Button
               type="submit"

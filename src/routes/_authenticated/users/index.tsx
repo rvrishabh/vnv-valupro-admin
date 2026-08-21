@@ -9,25 +9,12 @@ import { useUsersQuery } from "@/api/queries/users";
 import { AlertPopup } from "@/components/AlertPopup/AlertPopup";
 import { DataTable } from "@/components/DataTable/data-table";
 import { DataTableColumnHeader } from "@/components/DataTable/data-table-column-header";
+import FormComboBox from "@/components/Form/FormComboBox";
 import FormInput from "@/components/Form/FormInput";
 import { Modal } from "@/components/Modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Form } from "@/components/ui/form";
 import type { User } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconBan, IconCircleCheck, IconPencil, IconPlus } from "@tabler/icons-react";
@@ -320,29 +307,16 @@ function UsersPage() {
                 type="email"
                 required
               />
-              <FormField
+              <FormComboBox
                 control={createForm.control}
                 name="roleId"
-                render={({ field }) => (
-                  <FormItem className="w-full pb-2">
-                    <FormLabel>Role</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {roleOptions.map((role) => (
-                          <SelectItem key={role.id} value={role.id}>
-                            {role.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="Role"
+                placeholder="Select a role"
+                required
+                options={roleOptions.map((role) => ({
+                  label: role.name,
+                  value: role.id,
+                }))}
               />
               <FormInput
                 control={createForm.control}

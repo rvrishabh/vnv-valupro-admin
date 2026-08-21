@@ -11,25 +11,12 @@ import { useInstitutionsQuery } from "@/api/queries/institutions";
 import { AlertPopup } from "@/components/AlertPopup/AlertPopup";
 import { DataTable } from "@/components/DataTable/data-table";
 import { DataTableColumnHeader } from "@/components/DataTable/data-table-column-header";
+import FormComboBox from "@/components/Form/FormComboBox";
 import FormInput from "@/components/Form/FormInput";
 import { Modal } from "@/components/Modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Form } from "@/components/ui/form";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Branch } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -288,29 +275,16 @@ function BranchesPage() {
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-2 pb-2"
           >
-            <FormField
+            <FormComboBox
               control={form.control}
               name="institutionId"
-              render={({ field }) => (
-                <FormItem className="w-full pb-2">
-                  <FormLabel>Institution</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select an institution" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {institutionOptions.map((inst) => (
-                        <SelectItem key={inst.id} value={inst.id}>
-                          {inst.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Institution"
+              placeholder="Select an institution"
+              required
+              options={institutionOptions.map((inst) => ({
+                label: inst.name,
+                value: inst.id,
+              }))}
             />
             <FormInput
               control={form.control}

@@ -39,12 +39,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toNumber, VALUATION_STATUS_VARIANT } from "@/lib/valuation-format";
 import type { FloorInput, Valuation } from "@/types";
 import { IconDownload, IconRefresh } from "@tabler/icons-react";
-import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-
-export const Route = createFileRoute("/_authenticated/valuations/$id")({
-  component: ValuationEditorPage,
-});
 
 const METHODS = [
   { value: "LAND_AND_BUILDING", label: "Land & Building" },
@@ -115,8 +110,7 @@ function toFormState(v: Valuation): FormState {
   };
 }
 
-function ValuationEditorPage() {
-  const { id } = Route.useParams();
+export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
   const valuationQuery = useValuationQuery(id);
   const optionsQuery = useValuationOptionsQuery();
   const previewQuery = useValuationPreviewQuery(id);
@@ -198,20 +192,11 @@ function ValuationEditorPage() {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="font-display text-xl font-semibold">{ownerName}</h2>
-            <Badge variant={VALUATION_STATUS_VARIANT[valuation.status] ?? "outline"}>
-              {valuation.status}
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {valuation.case?.institution?.name ?? "Bank"} ·{" "}
-            {valuation.case?.caseNumber ?? valuation.caseId.slice(0, 8)} ·{" "}
-            <Link to="/valuations" className="underline">
-              Back to list
-            </Link>
-          </p>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold">{ownerName}</h3>
+          <Badge variant={VALUATION_STATUS_VARIANT[valuation.status] ?? "outline"}>
+            {valuation.status}
+          </Badge>
         </div>
 
         <div className="flex flex-wrap gap-2">

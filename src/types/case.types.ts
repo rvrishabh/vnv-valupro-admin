@@ -32,7 +32,13 @@ export interface Case {
   checkedBy?: CaseParticipant;
   institution?: { id: string; name: string; code: string };
   branch?: { id: string; branchName: string };
-  report?: { id: string } | null;
+  report?: {
+    id: string;
+    status: string;
+    roundedMarketValue: string | number | null;
+    realizableValue: string | number | null;
+    submittedAt: string | null;
+  } | null;
 }
 
 export interface ListCasesQuery {

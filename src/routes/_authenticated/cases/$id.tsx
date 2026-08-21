@@ -1,11 +1,14 @@
 import {
   useAssignCaseMutation,
   useCompleteSurveyMutation,
+  useDeleteCaseMutation,
   useRaiseQueryMutation,
   useStartSurveyMutation,
 } from "@/api/mutations/cases";
-import { useCaseQuery, useCaseTimelineQuery } from "@/api/queries/cases";
+import { useCreateValuationMutation } from "@/api/mutations/valuations";
+import { caseQueryKeys, useCaseQuery, useCaseTimelineQuery } from "@/api/queries/cases";
 import { useUsersQuery } from "@/api/queries/users";
+import { ValuationEditor } from "@/components/Valuation/ValuationEditor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   CASE_ACTION_LABELS,
@@ -24,15 +28,38 @@ import {
   formatDateTime,
   MILESTONE_LABELS,
 } from "@/lib/case-format";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { IconTrash } from "@tabler/icons-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { z } from "zod";
+
+const caseDetailSearchSchema = z.object({
+  // Lets a link jump straight to the Valuation tab, e.g. from the cases list
+  // or right after a new case is created.
+  tab: z.enum(["overview", "valuation"]).optional(),
+});
 
 export const Route = createFileRoute("/_authenticated/cases/$id")({
+  validateSearch: caseDetailSearchSchema,
   component: CaseDetailPage,
 });
 
 function CaseDetailPage() {
   const { id } = Route.useParams();
+  const { tab } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
   const caseQuery = useCaseQuery(id);
   const timelineQuery = useCaseTimelineQuery(id);
   const usersQuery = useUsersQuery({ page: 1, limit: 100 });
@@ -41,6 +68,9 @@ function CaseDetailPage() {
   const startSurvey = useStartSurveyMutation();
   const completeSurvey = useCompleteSurveyMutation();
   const raiseQuery = useRaiseQueryMutation();
+  const deleteCase = useDeleteCaseMutation();
+  const createValuation = useCreateValuationMutation();
+  const queryClient = useQueryClient();
 
   const [engineerId, setEngineerId] = useState("");
   const [notes, setNotes] = useState("");
@@ -76,17 +106,61 @@ function CaseDetailPage() {
           </p>
         </div>
 
-        {record.report?.id ? (
-          <Button asChild>
-            <Link to="/valuations/$id" params={{ id: record.report.id }}>
-              Open valuation
-            </Link>
-          </Button>
-        ) : (
-          <Badge variant="outline">No valuation yet</Badge>
-        )}
+        <div className="flex items-center gap-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="text-destructive">
+                <IconTrash className="mr-1 size-4" />
+                Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete case {record.caseNumber}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This permanently deletes the case
+                  {record.report ? ", its valuation report" : ""}, along with any
+                  documents, fees, queries and the full audit trail. This cannot be
+                  undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-white hover:bg-destructive/90"
+                  onClick={() =>
+                    deleteCase.mutate(id, {
+                      onSuccess: () => navigate({ to: "/cases" }),
+                    })
+                  }
+                >
+                  Delete case
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
+      <Tabs
+        value={tab ?? "overview"}
+        onValueChange={(value) =>
+          navigate({ search: { tab: value as "overview" | "valuation" } })
+        }
+      >
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="valuation">
+            Valuation
+            {record.report ? (
+              <Badge variant={record.report.status === "APPROVED" ? "default" : "secondary"} className="ml-1.5">
+                {record.report.status}
+              </Badge>
+            ) : null}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="mt-4">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex flex-col gap-4">
           <Card>
@@ -259,6 +333,40 @@ function CaseDetailPage() {
           </Card>
         </div>
       </div>
+        </TabsContent>
+
+        <TabsContent value="valuation" className="mt-4">
+          {record.report ? (
+            <ValuationEditor valuationId={record.report.id} />
+          ) : (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">No valuation yet</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col items-start gap-3">
+                <p className="text-sm text-muted-foreground">
+                  Start the valuation to begin filling in title, site and rate
+                  details for this case.
+                </p>
+                <Button
+                  onClick={() =>
+                    createValuation.mutate(
+                      { caseId: id },
+                      {
+                        onSuccess: () =>
+                          queryClient.invalidateQueries({ queryKey: caseQueryKeys.all }),
+                      },
+                    )
+                  }
+                  disabled={createValuation.isPending}
+                >
+                  {createValuation.isPending ? "Starting…" : "Start valuation"}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

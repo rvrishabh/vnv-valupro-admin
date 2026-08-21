@@ -1,5 +1,5 @@
-import logoIcon from "@/assets/logo-icon.png";
 import logoFull from "@/assets/logo-full.png";
+import logoIcon from "@/assets/logo-icon.png";
 import { AppSideBar } from "@/components/SideNav/AppSidebar";
 import type { NavMainItem } from "@/components/SideNav/NavMain";
 import { SiteHeader } from "@/components/SideNav/SiteHeader";
@@ -9,7 +9,6 @@ import {
   IconBuildingBank,
   IconBuildingSkyscraper,
   IconCalculator,
-  IconFileText,
   IconFolders,
   IconLayoutDashboard,
   IconShieldLock,
@@ -19,8 +18,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 const menuItems: NavMainItem[] = [
   { title: "Dashboard", url: "/", icon: IconLayoutDashboard },
-  { title: "Users", url: "/users", icon: IconUsers },
-  { title: "Roles", url: "/roles", icon: IconShieldLock },
+  { title: "Cases", url: "/cases", icon: IconFolders },
   {
     title: "Institutions",
     url: "/institutions",
@@ -37,8 +35,8 @@ const menuItems: NavMainItem[] = [
     url: "/valuation-estimates",
     icon: IconCalculator,
   },
-  { title: "Cases", url: "/cases", icon: IconFolders },
-  { title: "Valuations", url: "/valuations", icon: IconFileText },
+  { title: "Users", url: "/users", icon: IconUsers },
+  { title: "Roles", url: "/roles", icon: IconShieldLock },
 ];
 
 export const Route = createFileRoute("/_authenticated")({
@@ -71,7 +69,10 @@ function AuthenticatedLayout() {
         logoIcon={logoIcon}
         iconClassName="h-8 w-auto max-w-[9rem] object-contain"
         to="/"
-        user={{ name: user?.name ?? undefined, email: user?.email ?? undefined }}
+        user={{
+          name: user?.name ?? undefined,
+          email: user?.email ?? undefined,
+        }}
         onLogout={handleLogout}
       />
       <SidebarInset>

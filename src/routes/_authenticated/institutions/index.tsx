@@ -8,25 +8,12 @@ import { useInstitutionsQuery } from "@/api/queries/institutions";
 import { AlertPopup } from "@/components/AlertPopup/AlertPopup";
 import { DataTable } from "@/components/DataTable/data-table";
 import { DataTableColumnHeader } from "@/components/DataTable/data-table-column-header";
+import FormComboBox from "@/components/Form/FormComboBox";
 import FormInput from "@/components/Form/FormInput";
 import { Modal } from "@/components/Modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Form } from "@/components/ui/form";
 import type { Institution } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconPencil, IconPlus, IconTrash } from "@tabler/icons-react";
@@ -250,29 +237,16 @@ function InstitutionsPage() {
           >
             <FormInput control={form.control} name="name" label="Name" required />
             <FormInput control={form.control} name="code" label="Code" required />
-            <FormField
+            <FormComboBox
               control={form.control}
               name="institutionTypeId"
-              render={({ field }) => (
-                <FormItem className="w-full pb-2">
-                  <FormLabel>Institution Type</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {typeOptions.map((type) => (
-                        <SelectItem key={type.id} value={type.id}>
-                          {type.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Institution Type"
+              placeholder="Select a type"
+              required
+              options={typeOptions.map((type) => ({
+                label: type.name,
+                value: type.id,
+              }))}
             />
             <Button
               type="submit"

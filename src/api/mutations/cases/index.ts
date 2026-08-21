@@ -92,3 +92,26 @@ export function useRaiseQueryMutation() {
     "Unable to raise the query",
   );
 }
+
+/**
+ * Hard-deletes a case together with its valuation, documents, fees, queries and
+ * audit trail. Irreversible — the caller must confirm first.
+ */
+export function useDeleteCaseMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.delete<{ id: string; caseNumber: string }>(
+        `/cases/${id}`,
+      );
+      return response.data;
+    },
+    onSuccess: (deleted) => {
+      toast.success(`Case ${deleted?.caseNumber ?? ""} deleted`.trim());
+      queryClient.invalidateQueries({ queryKey: caseQueryKeys.all });
+      // The valuation went with it, so that list is stale too.
+      queryClient.invalidateQueries({ queryKey: ["valuations"] });
+    },
+    onError: (err) => toastApiError(err, "Unable to delete the case"),
+  });
+}
