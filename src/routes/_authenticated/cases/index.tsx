@@ -1,21 +1,17 @@
-import { useValuationsQuery } from "@/api/queries/valuations";
+import { useCasesQuery } from "@/api/queries/cases";
 import { DataTable } from "@/components/DataTable/data-table";
 import { DataTableColumnHeader } from "@/components/DataTable/data-table-column-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  formatArea,
-  formatInr,
-  VALUATION_STATUS_VARIANT,
-} from "@/lib/valuation-format";
-import type { Valuation } from "@/types";
-import { IconFileText } from "@tabler/icons-react";
+import { CASE_STATUS_VARIANT } from "@/lib/case-format";
+import type { Case } from "@/types";
+import { IconPlus } from "@tabler/icons-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type { ColumnDef, PaginationState, SortingState } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 
-export const Route = createFileRoute("/_authenticated/valuations/")({
-  component: ValuationsPage,
+export const Route = createFileRoute("/_authenticated/cases/")({
+  component: CasesPage,
 });
 
 function buildSort(sorting: SortingState): string | undefined {
@@ -23,7 +19,7 @@ function buildSort(sorting: SortingState): string | undefined {
   return first ? `${first.id}:${first.desc ? "desc" : "asc"}` : undefined;
 }
 
-function ValuationsPage() {
+function CasesPage() {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 20,
@@ -31,70 +27,66 @@ function ValuationsPage() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [searchText, setSearchText] = useState<string>();
 
-  const listQuery = useValuationsQuery({
+  const listQuery = useCasesQuery({
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
     sort: buildSort(sorting),
     search: searchText,
   });
 
-  const columns = useMemo<ColumnDef<Valuation>[]>(
+  const columns = useMemo<ColumnDef<Case>[]>(
     () => [
       {
-        id: "owner",
-        header: "Owner / Case",
-        cell: ({ row }) => {
-          const owner = (row.original.titleDeed as { ownerName?: string } | null)
-            ?.ownerName;
-          return (
-            <div className="flex flex-col">
-              <span className="font-medium">{owner ?? "Untitled draft"}</span>
-              <span className="text-xs text-muted-foreground">
-                {row.original.case?.caseNumber ?? row.original.caseId.slice(0, 8)}
-              </span>
-            </div>
-          );
-        },
+        accessorKey: "caseNumber",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Case No." />
+        ),
+        cell: ({ row }) => (
+          <span className="font-medium">{row.original.caseNumber}</span>
+        ),
+      },
+      {
+        accessorKey: "customerName",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Customer" />
+        ),
+        cell: ({ row }) => (
+          <div className="flex flex-col">
+            <span>{row.original.customerName}</span>
+            <span className="text-xs text-muted-foreground">
+              {row.original.customerMobile}
+            </span>
+          </div>
+        ),
       },
       {
         id: "institution",
         header: "Bank",
-        cell: ({ row }) => row.original.case?.institution?.name ?? "—",
+        cell: ({ row }) => row.original.institution?.name ?? "—",
       },
       {
-        accessorKey: "tehsil",
-        header: "Tehsil",
-        cell: ({ row }) => row.original.tehsil ?? "—",
-      },
-      {
-        accessorKey: "plotAreaSqM",
-        header: "Plot Area",
-        cell: ({ row }) => formatArea(row.original.plotAreaSqM),
-      },
-      {
-        accessorKey: "roundedMarketValue",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Market Value" />
-        ),
+        accessorKey: "propertyType",
+        header: "Property",
         cell: ({ row }) => (
-          <span className="font-medium text-primary">
-            {formatInr(row.original.roundedMarketValue)}
-          </span>
+          <div className="flex flex-col">
+            <span>{row.original.propertyType}</span>
+            <span className="line-clamp-1 max-w-[16rem] text-xs text-muted-foreground">
+              {row.original.propertyLocation ?? "—"}
+            </span>
+          </div>
         ),
       },
       {
-        accessorKey: "realizableValue",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Realizable Value" />
-        ),
-        cell: ({ row }) => formatInr(row.original.realizableValue),
+        id: "assignedTo",
+        header: "Site Engineer",
+        cell: ({ row }) => row.original.assignedTo?.name ?? "Unassigned",
       },
       {
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => (
-          <Badge variant={VALUATION_STATUS_VARIANT[row.original.status] ?? "outline"}>
-            {row.original.status}
+          <Badge variant={CASE_STATUS_VARIANT[row.original.status] ?? "outline"}>
+            {row.original.status.replace(/_/g, " ")}
           </Badge>
         ),
       },
@@ -110,7 +102,7 @@ function ValuationsPage() {
         header: "",
         cell: ({ row }) => (
           <Button asChild variant="ghost" size="sm">
-            <Link to="/valuations/$id" params={{ id: row.original.id }}>
+            <Link to="/cases/$id" params={{ id: row.original.id }}>
               Open
             </Link>
           </Button>
@@ -124,17 +116,16 @@ function ValuationsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="font-display text-xl font-semibold text-foreground">
-            Valuations
-          </h2>
+          <h2 className="font-display text-xl font-semibold text-foreground">Cases</h2>
           <p className="text-sm text-muted-foreground">
-            Full land &amp; building valuation reports, from site visit to bank PDF.
+            Every valuation belongs to a case — from bank intake through site visit,
+            checking and the final report.
           </p>
         </div>
         <Button asChild>
           <Link to="/valuations/new">
-            <IconFileText className="mr-1 size-4" />
-            New Valuation
+            <IconPlus className="mr-1 size-4" />
+            New Case
           </Link>
         </Button>
       </div>

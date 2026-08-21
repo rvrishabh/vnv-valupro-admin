@@ -21,6 +21,15 @@ export interface Case {
   propertyLocation: string | null;
   bankReference: string | null;
   createdAt: string;
+  assignedAt: string | null;
+  surveyStartedAt: string | null;
+  surveyCompletedAt: string | null;
+  submittedAt: string | null;
+  approvedAt: string | null;
+  rejectedAt: string | null;
+  createdBy?: CaseParticipant;
+  assignedTo?: CaseParticipant;
+  checkedBy?: CaseParticipant;
   institution?: { id: string; name: string; code: string };
   branch?: { id: string; branchName: string };
   report?: { id: string } | null;
@@ -33,4 +42,39 @@ export interface ListCasesQuery {
   search?: string;
   status?: string;
   institutionId?: string;
+}
+
+export interface CaseParticipant {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface CaseAuditEvent {
+  id: string;
+  action: string;
+  oldStatus: string | null;
+  newStatus: string | null;
+  notes: string | null;
+  createdAt: string;
+  actor: CaseParticipant;
+}
+
+/** GET /cases/:id/timeline */
+export interface CaseTimeline {
+  participants: {
+    createdBy: CaseParticipant | null;
+    assignedTo: CaseParticipant | null;
+    checkedBy: CaseParticipant | null;
+  };
+  milestones: {
+    createdAt: string | null;
+    assignedAt: string | null;
+    surveyStartedAt: string | null;
+    surveyCompletedAt: string | null;
+    submittedAt: string | null;
+    approvedAt: string | null;
+    rejectedAt: string | null;
+  };
+  events: CaseAuditEvent[];
 }

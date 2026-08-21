@@ -91,6 +91,15 @@ export interface Valuation {
   method: ValuationMethod;
   reportYear: number | null;
   tehsil: string | null;
+  /** M-Doc!C8 — House / Flat / Shop / ... */
+  propertyType: string | null;
+  advanceReceived: string | number | null;
+  assetsSoldAsPerDeed: string | null;
+  /** Freehold | Leasehold */
+  tenure: string | null;
+  leaseDetails: Record<string, unknown> | null;
+  siteAddress: Record<string, unknown> | null;
+  discrepancy: Record<string, unknown> | null;
   plotAreaSqM: string | number | null;
   yearOfConstruction: number | null;
   expectedLifeYears: number | null;

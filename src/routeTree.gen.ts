@@ -18,9 +18,11 @@ import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedRolesIndexRouteImport } from './routes/_authenticated/roles/index'
 import { Route as AuthenticatedInstitutionsIndexRouteImport } from './routes/_authenticated/institutions/index'
 import { Route as AuthenticatedInstitutionTypesIndexRouteImport } from './routes/_authenticated/institution-types/index'
+import { Route as AuthenticatedCasesIndexRouteImport } from './routes/_authenticated/cases/index'
 import { Route as AuthenticatedBranchesIndexRouteImport } from './routes/_authenticated/branches/index'
 import { Route as AuthenticatedValuationsNewRouteImport } from './routes/_authenticated/valuations/new'
 import { Route as AuthenticatedValuationsIdRouteImport } from './routes/_authenticated/valuations/$id'
+import { Route as AuthenticatedCasesIdRouteImport } from './routes/_authenticated/cases/$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -70,6 +72,11 @@ const AuthenticatedInstitutionTypesIndexRoute =
     path: '/institution-types/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCasesIndexRoute = AuthenticatedCasesIndexRouteImport.update({
+  id: '/cases/',
+  path: '/cases/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedBranchesIndexRoute =
   AuthenticatedBranchesIndexRouteImport.update({
     id: '/branches/',
@@ -88,13 +95,20 @@ const AuthenticatedValuationsIdRoute =
     path: '/valuations/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCasesIdRoute = AuthenticatedCasesIdRouteImport.update({
+  id: '/cases/$id',
+  path: '/cases/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/': typeof AuthenticatedIndexRoute
+  '/cases/$id': typeof AuthenticatedCasesIdRoute
   '/valuations/$id': typeof AuthenticatedValuationsIdRoute
   '/valuations/new': typeof AuthenticatedValuationsNewRoute
   '/branches': typeof AuthenticatedBranchesIndexRoute
+  '/cases': typeof AuthenticatedCasesIndexRoute
   '/institution-types': typeof AuthenticatedInstitutionTypesIndexRoute
   '/institutions': typeof AuthenticatedInstitutionsIndexRoute
   '/roles': typeof AuthenticatedRolesIndexRoute
@@ -105,9 +119,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/': typeof AuthenticatedIndexRoute
+  '/cases/$id': typeof AuthenticatedCasesIdRoute
   '/valuations/$id': typeof AuthenticatedValuationsIdRoute
   '/valuations/new': typeof AuthenticatedValuationsNewRoute
   '/branches': typeof AuthenticatedBranchesIndexRoute
+  '/cases': typeof AuthenticatedCasesIndexRoute
   '/institution-types': typeof AuthenticatedInstitutionTypesIndexRoute
   '/institutions': typeof AuthenticatedInstitutionsIndexRoute
   '/roles': typeof AuthenticatedRolesIndexRoute
@@ -120,9 +136,11 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/cases/$id': typeof AuthenticatedCasesIdRoute
   '/_authenticated/valuations/$id': typeof AuthenticatedValuationsIdRoute
   '/_authenticated/valuations/new': typeof AuthenticatedValuationsNewRoute
   '/_authenticated/branches/': typeof AuthenticatedBranchesIndexRoute
+  '/_authenticated/cases/': typeof AuthenticatedCasesIndexRoute
   '/_authenticated/institution-types/': typeof AuthenticatedInstitutionTypesIndexRoute
   '/_authenticated/institutions/': typeof AuthenticatedInstitutionsIndexRoute
   '/_authenticated/roles/': typeof AuthenticatedRolesIndexRoute
@@ -135,9 +153,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/login'
     | '/'
+    | '/cases/$id'
     | '/valuations/$id'
     | '/valuations/new'
     | '/branches'
+    | '/cases'
     | '/institution-types'
     | '/institutions'
     | '/roles'
@@ -148,9 +168,11 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/'
+    | '/cases/$id'
     | '/valuations/$id'
     | '/valuations/new'
     | '/branches'
+    | '/cases'
     | '/institution-types'
     | '/institutions'
     | '/roles'
@@ -162,9 +184,11 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/login'
     | '/_authenticated/'
+    | '/_authenticated/cases/$id'
     | '/_authenticated/valuations/$id'
     | '/_authenticated/valuations/new'
     | '/_authenticated/branches/'
+    | '/_authenticated/cases/'
     | '/_authenticated/institution-types/'
     | '/_authenticated/institutions/'
     | '/_authenticated/roles/'
@@ -243,6 +267,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInstitutionTypesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cases/': {
+      id: '/_authenticated/cases/'
+      path: '/cases'
+      fullPath: '/cases'
+      preLoaderRoute: typeof AuthenticatedCasesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/branches/': {
       id: '/_authenticated/branches/'
       path: '/branches'
@@ -264,14 +295,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedValuationsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cases/$id': {
+      id: '/_authenticated/cases/$id'
+      path: '/cases/$id'
+      fullPath: '/cases/$id'
+      preLoaderRoute: typeof AuthenticatedCasesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedCasesIdRoute: typeof AuthenticatedCasesIdRoute
   AuthenticatedValuationsIdRoute: typeof AuthenticatedValuationsIdRoute
   AuthenticatedValuationsNewRoute: typeof AuthenticatedValuationsNewRoute
   AuthenticatedBranchesIndexRoute: typeof AuthenticatedBranchesIndexRoute
+  AuthenticatedCasesIndexRoute: typeof AuthenticatedCasesIndexRoute
   AuthenticatedInstitutionTypesIndexRoute: typeof AuthenticatedInstitutionTypesIndexRoute
   AuthenticatedInstitutionsIndexRoute: typeof AuthenticatedInstitutionsIndexRoute
   AuthenticatedRolesIndexRoute: typeof AuthenticatedRolesIndexRoute
@@ -282,9 +322,11 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedCasesIdRoute: AuthenticatedCasesIdRoute,
   AuthenticatedValuationsIdRoute: AuthenticatedValuationsIdRoute,
   AuthenticatedValuationsNewRoute: AuthenticatedValuationsNewRoute,
   AuthenticatedBranchesIndexRoute: AuthenticatedBranchesIndexRoute,
+  AuthenticatedCasesIndexRoute: AuthenticatedCasesIndexRoute,
   AuthenticatedInstitutionTypesIndexRoute:
     AuthenticatedInstitutionTypesIndexRoute,
   AuthenticatedInstitutionsIndexRoute: AuthenticatedInstitutionsIndexRoute,

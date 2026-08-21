@@ -10,6 +10,7 @@ import {
   IconBuildingSkyscraper,
   IconCalculator,
   IconFileText,
+  IconFolders,
   IconLayoutDashboard,
   IconShieldLock,
   IconUsers,
@@ -36,6 +37,7 @@ const menuItems: NavMainItem[] = [
     url: "/valuation-estimates",
     icon: IconCalculator,
   },
+  { title: "Cases", url: "/cases", icon: IconFolders },
   { title: "Valuations", url: "/valuations", icon: IconFileText },
 ];
 
