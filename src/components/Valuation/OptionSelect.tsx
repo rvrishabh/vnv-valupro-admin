@@ -43,7 +43,7 @@ export function OptionSelect({
       disabled={disabled}
       onValueChange={(next) => onChange(next === CLEAR ? "" : next)}
     >
-      <SelectTrigger>
+      <SelectTrigger className="w-full">
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>

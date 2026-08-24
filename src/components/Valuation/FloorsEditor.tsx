@@ -72,20 +72,20 @@ export function FloorsEditor({
             type="number"
             step="0.01"
             min="0"
-            value={floor.coveredAreaSqM}
+            value={floor.coveredAreaSqM === 0 ? "" : floor.coveredAreaSqM}
             disabled={disabled}
             onChange={(e) =>
-              update(index, { coveredAreaSqM: Number(e.target.value) })
+              update(index, { coveredAreaSqM: Number(e.target.value) || 0 })
             }
           />
           <Input
             type="number"
             step="1"
             min="0"
-            value={floor.replacementRate}
+            value={floor.replacementRate === 0 ? "" : floor.replacementRate}
             disabled={disabled}
             onChange={(e) =>
-              update(index, { replacementRate: Number(e.target.value) })
+              update(index, { replacementRate: Number(e.target.value) || 0 })
             }
           />
           <Select

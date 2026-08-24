@@ -15,7 +15,7 @@ export function Field({
   hint?: string;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex min-w-0 flex-col gap-1.5">
       <Label className="text-xs text-muted-foreground">{label}</Label>
       {children}
       {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
@@ -63,6 +63,7 @@ export function SectionFields({
             ) : field.type === "textarea" ? (
               <Textarea
                 rows={2}
+                className="field-sizing-fixed min-w-0"
                 value={value}
                 disabled={disabled}
                 onChange={(e) => onChange(field.key, e.target.value)}

@@ -66,7 +66,7 @@ export function CreatableSelect({
             !value && "text-muted-foreground",
           )}
         >
-          {value || placeholder}
+          <span className="min-w-0 truncate">{value || placeholder}</span>
           <IconChevronDown className="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

@@ -254,7 +254,7 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
                     disabled={readOnly}
                     onValueChange={(v) => set("method", v as Valuation["method"])}
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {METHODS.map((m) => (
                         <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
