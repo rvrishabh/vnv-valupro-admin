@@ -1,9 +1,11 @@
 import type {
   createInstitutionTypePayloadSchema,
+  institutionTypeFormSchema,
   updateInstitutionTypePayloadSchema,
 } from "@/schemas/institution-type.schema";
 import type {
   createInstitutionPayloadSchema,
+  institutionFormSchema,
   updateInstitutionPayloadSchema,
 } from "@/schemas/institution.schema";
 import type { z } from "zod";
@@ -20,6 +22,9 @@ export type CreateInstitutionTypePayload = z.infer<
 >;
 export type UpdateInstitutionTypePayload = z.infer<
   typeof updateInstitutionTypePayloadSchema
+>;
+export type InstitutionTypeFormValues = z.infer<
+  typeof institutionTypeFormSchema
 >;
 
 export interface Institution {
@@ -38,6 +43,7 @@ export type CreateInstitutionPayload = z.infer<
 export type UpdateInstitutionPayload = z.infer<
   typeof updateInstitutionPayloadSchema
 >;
+export type InstitutionFormValues = z.infer<typeof institutionFormSchema>;
 
 export interface ListInstitutionsQuery {
   page?: number;

@@ -1,4 +1,5 @@
 import type {
+  branchFormSchema,
   createManualBranchPayloadSchema,
   updateBranchPayloadSchema,
 } from "@/schemas/branch.schema";
@@ -25,6 +26,7 @@ export type CreateManualBranchPayload = z.infer<
   typeof createManualBranchPayloadSchema
 >;
 export type UpdateBranchPayload = z.infer<typeof updateBranchPayloadSchema>;
+export type BranchFormValues = z.infer<typeof branchFormSchema>;
 
 export interface ListBranchesQuery {
   page?: number;

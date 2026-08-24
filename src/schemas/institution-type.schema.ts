@@ -9,3 +9,9 @@ export const createInstitutionTypePayloadSchema = z.object({
 /** PATCH /institution-types/:id */
 export const updateInstitutionTypePayloadSchema =
   createInstitutionTypePayloadSchema.partial();
+
+/** Institution types page create/edit form */
+export const institutionTypeFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+});

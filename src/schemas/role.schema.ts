@@ -15,3 +15,10 @@ export const updateRolePayloadSchema = createRolePayloadSchema.partial();
 export const assignPermissionsPayloadSchema = z.object({
   permissionIds: z.array(z.string()),
 });
+
+/** Roles page create/edit form */
+export const roleFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  loginChannel: z.enum(["WEB", "MOBILE"]),
+});

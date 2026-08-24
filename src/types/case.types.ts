@@ -1,3 +1,6 @@
+import type { caseDetailSearchSchema, createCasePayloadSchema } from "@/schemas/case.schema";
+import type { z } from "zod";
+
 export type CaseStatus =
   | "PENDING"
   | "ASSIGNED"
@@ -40,6 +43,9 @@ export interface Case {
     submittedAt: string | null;
   } | null;
 }
+
+export type CreateCasePayload = z.infer<typeof createCasePayloadSchema>;
+export type CaseDetailSearch = z.infer<typeof caseDetailSearchSchema>;
 
 export interface ListCasesQuery {
   page?: number;

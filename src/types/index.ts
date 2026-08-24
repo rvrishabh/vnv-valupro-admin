@@ -1,6 +1,7 @@
 export * from "./api.types";
 export * from "./auth.types";
 export * from "./branch.types";
+export * from "./dashboard.types";
 export * from "./case.types";
 export * from "./institution.types";
 export * from "./permission.types";

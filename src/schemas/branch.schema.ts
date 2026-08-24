@@ -16,3 +16,13 @@ export const updateBranchPayloadSchema = createManualBranchPayloadSchema
   .extend({
     ifscCode: z.string().optional(),
   });
+
+/** Branches page create form */
+export const branchFormSchema = z.object({
+  institutionId: z.string().min(1, "Institution is required"),
+  branchName: z.string().min(1, "Branch name is required"),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  district: z.string().optional(),
+  address: z.string().optional(),
+});

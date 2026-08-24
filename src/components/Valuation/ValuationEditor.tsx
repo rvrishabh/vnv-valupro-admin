@@ -506,23 +506,35 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
                   const dim = (form.dimensions[direction] as Section) ?? {};
                   const patch = (
                     section: "boundaries" | "dimensions",
-                    field: string,
+                    field: "asPerDocs" | "asPerSite",
                     value: string,
                   ) =>
-                    setForm((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            [section]: {
-                              ...(prev[section] as Section),
-                              [direction]: {
-                                ...((prev[section] as Section)[direction] as Section),
-                                [field]: value,
-                              },
-                            },
-                          }
-                        : prev,
-                    );
+                    setForm((prev) => {
+                      if (!prev) return prev;
+
+                      const rows = prev[section] as Section;
+                      const row = (rows[direction] as Section) ?? {};
+                      const patched: Section = { ...row, [field]: value };
+
+                      // The site column mirrors the documents until someone
+                      // records something different on site — the sheet does
+                      // this literally (M-Doc!C96 = B96, C78 = B78). Only a
+                      // site value still equal to the previous documents value
+                      // is carried along, so a real site observation is never
+                      // overwritten by a later correction to the deed.
+                      if (field === "asPerDocs") {
+                        const site = String(row.asPerSite ?? "");
+                        const previousDocs = String(row.asPerDocs ?? "");
+                        if (site === "" || site === previousDocs) {
+                          patched.asPerSite = value;
+                        }
+                      }
+
+                      return {
+                        ...prev,
+                        [section]: { ...rows, [direction]: patched },
+                      };
+                    });
 
                   return (
                     <div
@@ -555,6 +567,11 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
                     </div>
                   );
                 })}
+                <p className="text-xs text-muted-foreground">
+                  The site columns copy the document columns as you type. Edit a
+                  site value directly when the visit found something different —
+                  it then stops following the deed.
+                </p>
               </CardContent>
             </Card>
 

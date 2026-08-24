@@ -1,6 +1,7 @@
 import type {
   assignPermissionsPayloadSchema,
   createRolePayloadSchema,
+  roleFormSchema,
   updateRolePayloadSchema,
 } from "@/schemas/role.schema";
 import type { Permission } from "@/types/permission.types";
@@ -28,6 +29,7 @@ export type UpdateRolePayload = z.infer<typeof updateRolePayloadSchema>;
 export type AssignPermissionsPayload = z.infer<
   typeof assignPermissionsPayloadSchema
 >;
+export type RoleFormValues = z.infer<typeof roleFormSchema>;
 
 export interface ListRolesQuery {
   page?: number;

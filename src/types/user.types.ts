@@ -2,6 +2,8 @@ import type {
   createUserPayloadSchema,
   updateUserBranchPayloadSchema,
   updateUserPayloadSchema,
+  userCreateFormSchema,
+  userEditFormSchema,
 } from "@/schemas/user.schema";
 import type { z } from "zod";
 
@@ -68,6 +70,8 @@ export type UpdateUserPayload = z.infer<typeof updateUserPayloadSchema>;
 export type UpdateUserBranchPayload = z.infer<
   typeof updateUserBranchPayloadSchema
 >;
+export type UserCreateFormValues = z.infer<typeof userCreateFormSchema>;
+export type UserEditFormValues = z.infer<typeof userEditFormSchema>;
 
 export interface ListUsersQuery {
   page?: number;
