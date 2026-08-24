@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { ValuationOptions } from "@/types";
+import { CreatableSelect } from "./CreatableSelect";
 import type { FieldDef } from "./field-groups";
 import { OptionSelect } from "./OptionSelect";
 
@@ -52,7 +53,15 @@ export function SectionFields({
             label={field.label}
             hint={field.type === "textarea" ? undefined : undefined}
           >
-            {field.group ? (
+            {field.group && field.creatable ? (
+              <CreatableSelect
+                group={field.group}
+                options={options}
+                value={value}
+                disabled={disabled}
+                onChange={(v) => onChange(field.key, v)}
+              />
+            ) : field.group ? (
               <OptionSelect
                 group={field.group}
                 options={options}

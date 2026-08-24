@@ -8,6 +8,9 @@ export interface FloorInput {
   replacementRate: number;
   roofType: RoofType;
   constructionCategory?: 1 | 2;
+  /** Falls back to the building-level year when not set. */
+  yearOfConstruction?: number;
+  expectedLifeYears?: number;
   specs?: Record<string, string>;
 }
 
@@ -101,6 +104,9 @@ export interface Valuation {
   siteAddress: Record<string, unknown> | null;
   discrepancy: Record<string, unknown> | null;
   plotAreaSqM: string | number | null;
+  areaAsPerDeed: string | number | null;
+  areaAsPerSite: string | number | null;
+  dimensionUnit: string | null;
   yearOfConstruction: number | null;
   expectedLifeYears: number | null;
   prevailingMarketRate: string | number | null;

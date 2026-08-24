@@ -11,6 +11,11 @@ export interface FieldDef {
   label: string;
   /** Option group name; omit for a free-text field. */
   group?: string;
+  /**
+   * Offer the group's options but also accept a typed-in value. For fields
+   * where the book's list is a starting point rather than an exhaustive one.
+   */
+  creatable?: boolean;
   type?: "text" | "number" | "textarea";
   /** Cell reference in the master workbook, for traceability. */
   cell?: string;
@@ -62,6 +67,9 @@ export const DISCREPANCY_FIELDS: FieldDef[] = [
     key: "mismatchReason",
     label: "Reason for mismatch of boundaries",
     group: "boundaryMismatchReason",
+    // The book lists three stock reasons; real mismatches rarely match one, so
+    // the valuer can describe what they actually found.
+    creatable: true,
     cell: "C81",
   },
   { key: "plotDemarcated", label: "Plot demarcated", group: "plotDemarcated", cell: "C82" },

@@ -8,6 +8,9 @@ export const floorSchema = z.object({
   replacementRate: z.coerce.number().min(0, "Rate cannot be negative"),
   roofType: z.enum(ROOF_TYPES),
   constructionCategory: z.union([z.literal(1), z.literal(2)]).optional(),
+  // Set only when a floor was built in a different year to the building.
+  yearOfConstruction: z.coerce.number().int().min(1800).optional(),
+  expectedLifeYears: z.coerce.number().int().min(1).optional(),
   specs: z.record(z.string(), z.string()).optional(),
 });
 
@@ -39,6 +42,9 @@ export const upsertValuationPayloadSchema = z.object({
   siteAddress: z.record(z.string(), z.unknown()).optional(),
   discrepancy: z.record(z.string(), z.unknown()).optional(),
   plotAreaSqM: z.coerce.number().min(0).optional(),
+  areaAsPerDeed: z.coerce.number().min(0).optional(),
+  areaAsPerSite: z.coerce.number().min(0).optional(),
+  dimensionUnit: z.enum(["ft", "m"]).optional(),
   land: landSchema.optional(),
   building: buildingSchema.optional(),
   titleDeed: z.record(z.string(), z.unknown()).optional(),

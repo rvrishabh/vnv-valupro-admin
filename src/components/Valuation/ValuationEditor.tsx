@@ -10,6 +10,10 @@ import {
   useValuationPreviewQuery,
   useValuationQuery,
 } from "@/api/queries/valuations";
+import {
+  AreaOfSite,
+  type DimensionUnit,
+} from "@/components/Valuation/AreaOfSite";
 import { CreatableSelect } from "@/components/Valuation/CreatableSelect";
 import {
   BUILDING_SPEC_FIELDS,
@@ -51,12 +55,24 @@ const DIRECTIONS = ["north", "south", "east", "west"] as const;
 
 type Section = Record<string, unknown>;
 
+/** Pulls one column (docs or site) out of the per-direction dimensions blob. */
+function sidesFor(dimensions: Section, column: "asPerDocs" | "asPerSite") {
+  const source = dimensions as Record<string, Section | undefined>;
+  return {
+    north: String(source.north?.[column] ?? ""),
+    south: String(source.south?.[column] ?? ""),
+    east: String(source.east?.[column] ?? ""),
+    west: String(source.west?.[column] ?? ""),
+  };
+}
+
 interface FormState {
   method: Valuation["method"];
   propertyType: string;
   reportYear: string;
-  tehsil: string;
-  plotAreaSqM: string;
+  dimensionUnit: DimensionUnit;
+  areaAsPerDeed: string;
+  areaAsPerSite: string;
   advanceReceived: string;
   assetsSoldAsPerDeed: string;
   tenure: string;
@@ -84,8 +100,9 @@ function toFormState(v: Valuation): FormState {
     method: v.method,
     propertyType: v.propertyType ?? "",
     reportYear: String(v.reportYear ?? new Date().getFullYear()),
-    tehsil: v.tehsil ?? "",
-    plotAreaSqM: String(toNumber(v.plotAreaSqM) ?? ""),
+    dimensionUnit: (v.dimensionUnit as DimensionUnit) ?? "ft",
+    areaAsPerDeed: String(toNumber(v.areaAsPerDeed) ?? ""),
+    areaAsPerSite: String(toNumber(v.areaAsPerSite) ?? ""),
     advanceReceived: String(toNumber(v.advanceReceived) ?? ""),
     assetsSoldAsPerDeed: v.assetsSoldAsPerDeed ?? "",
     tenure: v.tenure ?? "",
@@ -97,7 +114,11 @@ function toFormState(v: Valuation): FormState {
     superAreaPercent: String((toNumber(v.superAreaPercent) ?? 0) * 100),
     yearOfConstruction: String(v.yearOfConstruction ?? ""),
     expectedLifeYears: String(v.expectedLifeYears ?? 80),
-    floors: v.floors?.length ? v.floors : [emptyFloor(0)],
+    floors: (v.floors?.length ? v.floors : [emptyFloor(0)]).map((floor) => ({
+      ...floor,
+      yearOfConstruction: floor.yearOfConstruction ?? v.yearOfConstruction ?? undefined,
+      expectedLifeYears: floor.expectedLifeYears ?? v.expectedLifeYears ?? undefined,
+    })),
     titleDeed: v.titleDeed ?? {},
     leaseDetails: v.leaseDetails ?? {},
     siteAddress: v.siteAddress ?? {},
@@ -142,6 +163,35 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => (prev ? { ...prev, [key]: value } : prev));
 
+  /**
+   * The building-level year and life are defaults, so changing one carries it
+   * down to every floor still sitting on the old default. A floor the valuer
+   * has given its own value is left alone — that is the whole point of setting
+   * it — which is why the previous default is compared rather than blindly
+   * overwritten.
+   */
+  const setBuildingDefault = (
+    key: "yearOfConstruction" | "expectedLifeYears",
+    value: string,
+  ) =>
+    setForm((prev) => {
+      if (!prev) return prev;
+
+      const previousDefault = prev[key];
+      const next = value === "" ? undefined : Number(value);
+
+      return {
+        ...prev,
+        [key]: value,
+        floors: prev.floors.map((floor) => {
+          const current = floor[key];
+          const wasFollowing =
+            current === undefined || String(current) === previousDefault;
+          return wasFollowing ? { ...floor, [key]: next } : floor;
+        }),
+      };
+    });
+
   const setIn = (section: keyof FormState, key: string, value: unknown) =>
     setForm((prev) =>
       prev
@@ -156,8 +206,12 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
         method: form.method,
         propertyType: form.propertyType || undefined,
         reportYear: Number(form.reportYear) || undefined,
-        tehsil: form.tehsil || undefined,
-        plotAreaSqM: Number(form.plotAreaSqM) || undefined,
+        // M-Rate's rate lookup keys off M-Doc!C48, which lives in the site
+        // address block — so that is the single place the tehsil is entered.
+        tehsil: String(form.siteAddress.tehsilForCircleRates ?? "") || undefined,
+        dimensionUnit: form.dimensionUnit,
+        areaAsPerDeed: Number(form.areaAsPerDeed) || undefined,
+        areaAsPerSite: Number(form.areaAsPerSite) || undefined,
         advanceReceived: Number(form.advanceReceived) || undefined,
         assetsSoldAsPerDeed: form.assetsSoldAsPerDeed || undefined,
         tenure: form.tenure || undefined,
@@ -294,25 +348,6 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
                   />
                 </Field>
 
-                <Field label="Tehsil (for circle & construction rates)">
-                  <OptionSelect
-                    group="tehsil"
-                    options={options}
-                    value={form.tehsil}
-                    disabled={readOnly}
-                    onChange={(v) => set("tehsil", v)}
-                  />
-                </Field>
-
-                <Field label="Plot area under consideration (Sq.m)">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={form.plotAreaSqM}
-                    disabled={readOnly}
-                    onChange={(e) => set("plotAreaSqM", e.target.value)}
-                  />
-                </Field>
               </CardContent>
             </Card>
 
@@ -437,16 +472,34 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
             </Card>
 
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="text-base">Boundaries &amp; Dimensions</CardTitle>
+                {/* Both columns are captured in the same unit, as the sheet
+                    does — the area below converts to Sq.m either way. */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Dimensions in</span>
+                  <Select
+                    value={form.dimensionUnit}
+                    disabled={readOnly}
+                    onValueChange={(v) => set("dimensionUnit", v as DimensionUnit)}
+                  >
+                    <SelectTrigger className="h-8 w-[110px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ft">Feet</SelectItem>
+                      <SelectItem value="m">Metres</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
                 <div className="grid grid-cols-[80px_1fr_1fr_110px_110px] gap-3 text-xs font-medium text-muted-foreground">
                   <span>Direction</span>
                   <span>As per documents</span>
                   <span>As per site</span>
-                  <span>Dim. (docs)</span>
-                  <span>Dim. (site)</span>
+                  <span>Dim. docs ({form.dimensionUnit})</span>
+                  <span>Dim. site ({form.dimensionUnit})</span>
                 </div>
                 {DIRECTIONS.map((direction) => {
                   const bound = (form.boundaries[direction] as Section) ?? {};
@@ -489,11 +542,13 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
                       />
                       <Input
                         value={String(dim.asPerDocs ?? "")}
+                        placeholder={form.dimensionUnit === "ft" ? "e.g. 30" : "e.g. 9.14"}
                         disabled={readOnly}
                         onChange={(e) => patch("dimensions", "asPerDocs", e.target.value)}
                       />
                       <Input
                         value={String(dim.asPerSite ?? "")}
+                        placeholder={form.dimensionUnit === "ft" ? "e.g. 30" : "e.g. 9.14"}
                         disabled={readOnly}
                         onChange={(e) => patch("dimensions", "asPerSite", e.target.value)}
                       />
@@ -502,6 +557,25 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
                 })}
               </CardContent>
             </Card>
+
+            <AreaOfSite
+              value={{ asPerDeed: form.areaAsPerDeed, asPerSite: form.areaAsPerSite }}
+              onChange={(next) =>
+                setForm((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        areaAsPerDeed: next.asPerDeed,
+                        areaAsPerSite: next.asPerSite,
+                      }
+                    : prev,
+                )
+              }
+              dimensionUnit={form.dimensionUnit}
+              docsSides={sidesFor(form.dimensions, "asPerDocs")}
+              siteSides={sidesFor(form.dimensions, "asPerSite")}
+              disabled={readOnly}
+            />
 
             <Card>
               <CardHeader className="pb-3">
@@ -563,13 +637,19 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Year of construction">
+                  <Field
+                    label="Year of construction"
+                    hint="Default for all floors; override per floor below."
+                  >
                     <Input type="number" value={form.yearOfConstruction} disabled={readOnly}
-                      onChange={(e) => set("yearOfConstruction", e.target.value)} />
+                      onChange={(e) => setBuildingDefault("yearOfConstruction", e.target.value)} />
                   </Field>
-                  <Field label="Total estimated life (years)">
+                  <Field
+                    label="Total estimated life (years)"
+                    hint="Default for all floors; override per floor below."
+                  >
                     <Input type="number" value={form.expectedLifeYears} disabled={readOnly}
-                      onChange={(e) => set("expectedLifeYears", e.target.value)} />
+                      onChange={(e) => setBuildingDefault("expectedLifeYears", e.target.value)} />
                   </Field>
                   <Field label="Total no. of floors">
                     <OptionSelect
@@ -593,6 +673,9 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
                 <FloorsEditor
                   floors={form.floors}
                   disabled={readOnly || isPlot}
+                  buildingYear={Number(form.yearOfConstruction) || 0}
+                  buildingLife={Number(form.expectedLifeYears) || 80}
+                  reportYear={Number(form.reportYear) || new Date().getFullYear()}
                   onChange={(floors) => set("floors", floors)}
                 />
               </CardContent>
