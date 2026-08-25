@@ -1,12 +1,7 @@
 import FormInput from "@/components/Form/FormInput";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type {
-  DirectionalSection,
-  ValuationFormValues,
-  ValuationOptions,
-} from "@/types";
+import type { DirectionalSection, ValuationFormValues } from "@/types";
 import { type Control, useFormContext, useWatch } from "react-hook-form";
-import { OptionSelect } from "./OptionSelect";
 import { Field, FIELD_LABEL_CLASS } from "./SectionFields";
 
 /** Sq.ft -> Sq.m divisor used throughout the workbook (M-Doc!C100). */
@@ -98,11 +93,9 @@ const numberOrNull = (value: string): number | null => {
 export function AreaOfSite({
   control,
   disabled,
-  options,
 }: {
   control: Control<ValuationFormValues>;
   disabled?: boolean;
-  options?: ValuationOptions;
 }) {
   const { setValue } = useFormContext<ValuationFormValues>();
 
@@ -112,6 +105,7 @@ export function AreaOfSite({
   const asPerDeed = useWatch({ control, name: "areaAsPerDeed" });
   const asPerSite = useWatch({ control, name: "areaAsPerSite" });
   const propertyType = useWatch({ control, name: "propertyType" });
+  const method = useWatch({ control, name: "method" });
 
   const unit: DimensionUnit = dimensionUnit ?? "ft";
   // Areas are computed in Sq.m and presented in whatever unit was chosen;
@@ -126,14 +120,14 @@ export function AreaOfSite({
   const areaFromDocs = areaFromSides(sidesFor(dimensions, "asPerDocs"), unit);
   const areaFromSite = areaFromSides(sidesFor(dimensions, "asPerSite"), unit);
 
-  // M-Doc!C110 — a shop's undivided share is its own area, a flat's has to be
-  // read off the deed, and anything else owns its land outright.
-  const shareMode =
-    String(propertyType ?? "").toLowerCase() === "flat"
-      ? "entered"
-      : String(propertyType ?? "").toLowerCase() === "shop"
-        ? "derived"
-        : "not-applicable";
+  // C108 is a formula on the method in the sheet, so it is shown as a derived
+  // value rather than a dropdown — a composite-rate valuation prices the super
+  // area, everything else the plot.
+  const areaBasis = method === "CRM" ? "Super Area" : "Plot Area";
+
+  // A share of common land only arises for a flat priced on a composite rate;
+  // any other property owns its land outright, so the field is not shown.
+  const needsUndividedShare = method === "CRM" && String(propertyType ?? "").toLowerCase() === "flat";
 
   const consideration = resolveConsideration(
     numberOrNull(asPerDeed ?? ""),
@@ -214,18 +208,16 @@ export function AreaOfSite({
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <OptionSelect
-            control={control}
-            name="areaBasis"
-            label="Area under consideration"
-            group="areaBasis"
-            options={options}
-            disabled={disabled}
-          />
+          <Field label="Area under consideration">
+            <p className="text-sm font-medium">{areaBasis}</p>
+            <span className="text-xs text-muted-foreground">
+              Follows the method of valuation.
+            </span>
+          </Field>
 
-          {/* Only a flat needs the share typing in — a shop's equals its area
-              and everything else has none to state (M-Doc!C110). */}
-          {shareMode === "entered" ? (
+          {/* Shown only for a flat on a composite rate; there is no share to
+              state otherwise (M-Doc!C110). */}
+          {needsUndividedShare ? (
             <FormInput
               control={control}
               name="undividedShareOfLand"
@@ -237,15 +229,7 @@ export function AreaOfSite({
               hint="Read from the deed for a flat in a multi-storey block."
               disabled={disabled}
             />
-          ) : (
-            <Field label="Undivided share of land">
-              <p className="text-sm text-muted-foreground">
-                {shareMode === "derived"
-                  ? `Same as the area under consideration — ${inAreaUnit(consideration.value)}.`
-                  : "Not mentioned in documents for this property type."}
-              </p>
-            </Field>
-          )}
+          ) : null}
         </div>
       </CardContent>
     </Card>

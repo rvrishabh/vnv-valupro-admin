@@ -66,6 +66,7 @@ export function SectionFields<TFieldValues extends FieldValues = FieldValues>({
               group={field.group}
               options={options}
               disabled={disabled}
+              persist={field.persist}
             />
           );
         }

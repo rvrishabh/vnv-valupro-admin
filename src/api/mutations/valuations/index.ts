@@ -4,3 +4,4 @@ export * from "./useSubmitValuationMutation";
 export * from "./useRecalculateValuationMutation";
 export * from "./useReviewValuationMutation";
 export * from "./useDownloadValuationPdfMutation";
+export * from "./useAddValuationOptionMutation";

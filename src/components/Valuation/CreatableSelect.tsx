@@ -1,3 +1,4 @@
+import { useAddValuationOptionMutation } from "@/api/mutations/valuations";
 import FormCreatableSelect from "@/components/Form/FormCreatableSelect";
 import type { ValuationOptions } from "@/types";
 import type { Control, FieldValues, Path } from "react-hook-form";
@@ -18,6 +19,7 @@ export function CreatableSelect<TFieldValues extends FieldValues = FieldValues>(
   disabled,
   className,
   placeholder = "Select or type…",
+  persist = false,
 }: {
   control: Control<TFieldValues>;
   name: Path<TFieldValues>;
@@ -28,7 +30,14 @@ export function CreatableSelect<TFieldValues extends FieldValues = FieldValues>(
   disabled?: boolean;
   className?: string;
   placeholder?: string;
+  /**
+   * Save a typed value back to the group so later reports offer it. Only for
+   * open-ended registers such as tehsils; the backend rejects any other group.
+   */
+  persist?: boolean;
 }) {
+  const addOption = useAddValuationOptionMutation();
+
   return (
     <FormCreatableSelect
       control={control}
@@ -39,6 +48,9 @@ export function CreatableSelect<TFieldValues extends FieldValues = FieldValues>(
       className={className}
       placeholder={placeholder}
       options={options?.[group] ?? []}
+      onCreate={
+        persist ? (value) => addOption.mutate({ group, value }) : undefined
+      }
     />
   );
 }

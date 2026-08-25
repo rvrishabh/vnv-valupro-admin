@@ -36,6 +36,8 @@ interface FormCreatableSelectProps<TFieldValues extends FieldValues = FieldValue
   disabled?: boolean;
   className?: string;
   labelClassName?: string;
+  /** Called with a value that was typed rather than picked from the list. */
+  onCreate?: (value: string) => void;
 }
 
 /**
@@ -54,6 +56,7 @@ const FormCreatableSelect = <TFieldValues extends FieldValues = FieldValues>({
   disabled = false,
   className,
   labelClassName,
+  onCreate,
 }: FormCreatableSelectProps<TFieldValues>) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -117,7 +120,13 @@ const FormCreatableSelect = <TFieldValues extends FieldValues = FieldValues>({
                     {!isNew ? <CommandEmpty>No match.</CommandEmpty> : null}
                     {isNew ? (
                       <CommandGroup heading="Add new">
-                        <CommandItem value={trimmed} onSelect={() => commit(trimmed)}>
+                        <CommandItem
+                          value={trimmed}
+                          onSelect={() => {
+                            commit(trimmed);
+                            onCreate?.(trimmed);
+                          }}
+                        >
                           Use “{trimmed}”
                         </CommandItem>
                       </CommandGroup>

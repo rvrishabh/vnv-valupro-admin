@@ -183,8 +183,6 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
   const tenure = useWatch({ control, name: "tenure" });
   const dimensionUnit = useWatch({ control, name: "dimensionUnit" });
   const roomCounts = useWatch({ control, name: "rooms" });
-  const methodValue = useWatch({ control, name: "method" });
-  const areaBasisValue = useWatch({ control, name: "areaBasis" });
   const coveredAreaConsideration = useWatch({
     control,
     name: "buildingSpecs.coveredAreaConsideration",
@@ -223,16 +221,6 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
   const dimensions = useWatch({ control, name: "dimensions" });
   const ownerNameValue = useWatch({ control, name: "titleDeed.ownerName" });
 
-  useEffect(() => {
-    if (!methodValue || areaBasisValue) return;
-    form.setValue(
-      "areaBasis",
-      methodValue === "CRM" ? "Super Area" : "Plot Area",
-      {
-        shouldDirty: false,
-      },
-    );
-  }, [methodValue, areaBasisValue, form]);
 
   if (valuationQuery.isLoading || !isReady || !valuation) {
     return <p className="text-sm text-muted-foreground">Loading valuation…</p>;
@@ -303,7 +291,6 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
           String(data.siteAddress.tehsilForCircleRates ?? "") || undefined,
         dimensionUnit: data.dimensionUnit,
         areaUnit: data.areaUnit,
-        areaBasis: data.areaBasis || undefined,
         // Only a Flat is entered by hand; a Shop is derived and anything else
         // has no share to state, both of which the backend resolves.
         undividedShareOfLand: Number(data.undividedShareOfLand) || undefined,
@@ -706,11 +693,7 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
                 </CardContent>
               </Card>
 
-              <AreaOfSite
-                control={control}
-                disabled={readOnly}
-                options={options}
-              />
+              <AreaOfSite control={control} disabled={readOnly} />
 
               <Card>
                 <CardHeader className="pb-3">

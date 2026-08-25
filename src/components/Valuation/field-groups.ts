@@ -16,6 +16,11 @@ export interface FieldDef {
    * where the book's list is a starting point rather than an exhaustive one.
    */
   creatable?: boolean;
+  /**
+   * Save a typed value back to the option group. Only for open-ended registers
+   * of places, which no workbook can list exhaustively.
+   */
+  persist?: boolean;
   type?: "text" | "number" | "textarea";
   /** Cell reference in the master workbook, for traceability. */
   cell?: string;
@@ -34,12 +39,21 @@ export const SITE_ADDRESS_FIELDS: FieldDef[] = [
     cell: "C46",
   },
   { key: "landmark", label: "Land Mark if any", cell: "C47" },
-  { key: "tehsilForCircleRates", label: "Tehsil for Circle Rates", group: "tehsil", cell: "C48" },
+  {
+    key: "tehsilForCircleRates",
+    label: "Tehsil for Circle Rates",
+    group: "tehsil",
+    creatable: true,
+    persist: true,
+    cell: "C48",
+  },
   { key: "district", label: "District", cell: "C49" },
   {
     key: "wardTehsilRegistration",
     label: "Ward / Tehsil for registration",
     group: "wardTehsilRegistration",
+    creatable: true,
+    persist: true,
     cell: "C50",
   },
 ];
