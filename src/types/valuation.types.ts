@@ -4,7 +4,13 @@ export type RoofType = "RCC" | "RBC" | "Girder Stone" | "Tin Shed" | "Kachcha";
 
 export interface FloorInput {
   name: string;
+  /**
+   * M-Rate!E49 — the area actually valued. Mirrors the measured area until a
+   * different basis (approved plan, bye laws) is recorded against the floor.
+   */
   coveredAreaSqM: number;
+  /** M-Rate!D49 — the area measured on site. */
+  actualAreaSqM?: number;
   replacementRate: number;
   roofType: RoofType;
   constructionCategory?: 1 | 2;
@@ -96,6 +102,14 @@ export interface Valuation {
   tehsil: string | null;
   /** M-Doc!C8 — House / Flat / Shop / ... */
   propertyType: string | null;
+  areaUnit: string | null;
+  areaBasis: string | null;
+  undividedShareOfLand: string | number | null;
+  documentsReceived: string | null;
+  gpsCoordinates: string | null;
+  briefDescription: string | null;
+  rooms: Record<string, unknown> | null;
+  floorDetails: Record<string, unknown> | null;
   advanceReceived: string | number | null;
   assetsSoldAsPerDeed: string | null;
   /** Freehold | Leasehold */
@@ -182,6 +196,15 @@ export interface ValuationFormValues {
   propertyType: string;
   reportYear: string;
   dimensionUnit: "ft" | "m";
+  /** Unit areas are displayed and entered in (M-Doc!C92). */
+  areaUnit: "Sq.m" | "Ha";
+  /** What the area under consideration measures (M-Doc!C108). */
+  areaBasis: string;
+  /** M-Doc!C110 — only used for a Flat; a Shop derives it, others have none. */
+  undividedShareOfLand: string;
+  documentsReceived: string;
+  gpsCoordinates: string;
+  briefDescription: string;
   areaAsPerDeed: string;
   areaAsPerSite: string;
   advanceReceived: string;
@@ -203,5 +226,7 @@ export interface ValuationFormValues {
   dimensions: DirectionalSection;
   buildingSpecs: ValuationFormSection;
   generalDetails: ValuationFormSection;
+  rooms: ValuationFormSection;
+  floorDetails: ValuationFormSection;
   engineerNotes: string;
 }

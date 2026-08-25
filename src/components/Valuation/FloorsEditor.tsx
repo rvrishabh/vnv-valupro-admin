@@ -3,7 +3,12 @@ import FormInput from "@/components/Form/FormInput";
 import { Button } from "@/components/ui/button";
 import type { FloorInput, RoofType, ValuationFormValues } from "@/types";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
-import { type Control, useFieldArray, useWatch } from "react-hook-form";
+import {
+  type Control,
+  useFieldArray,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
 
 const ROOF_TYPES: RoofType[] = ["RCC", "RBC", "Girder Stone", "Tin Shed", "Kachcha"];
 
@@ -30,6 +35,7 @@ export function emptyFloor(
   return {
     name: FLOOR_NAMES[index] ?? `Floor ${index}`,
     coveredAreaSqM: 0,
+    actualAreaSqM: 0,
     replacementRate: 0,
     roofType: "RCC",
     constructionCategory: 1,
@@ -62,7 +68,7 @@ function derive(
 const numberOrZero = (raw: string) => (raw === "" ? 0 : Number(raw));
 const numberOrUndefined = (raw: string) => (raw === "" ? undefined : Number(raw));
 
-const COLUMNS = "grid-cols-[1.2fr_0.9fr_1fr_1fr_0.8fr_0.9fr_1.3fr_auto]";
+const COLUMNS = "grid-cols-[1.1fr_0.9fr_0.9fr_1fr_0.9fr_0.8fr_0.8fr_1.2fr_auto]";
 
 export function FloorsEditor({
   control,
@@ -70,17 +76,28 @@ export function FloorsEditor({
   buildingYear = 0,
   buildingLife = 80,
   reportYear = new Date().getFullYear(),
+  areaConsideration,
 }: {
   control: Control<ValuationFormValues>;
   disabled?: boolean;
   buildingYear?: number;
   buildingLife?: number;
   reportYear?: number;
+  /** M-Rate!C59 — "As per actual", "As per bye laws", ... */
+  areaConsideration?: string;
 }) {
   const { fields, append, remove } = useFieldArray({ control, name: "floors" });
   // Age and depreciation are derived as the valuer types, so this row-level
   // view of the array has to stay subscribed to its values.
   const floors = useWatch({ control, name: "floors" }) ?? [];
+  const { setValue } = useFormContext<ValuationFormValues>();
+
+  // M-Rate!E47 — "Area Considered As per actual". The heading follows the
+  // "covered area under consideration" choice, so the column always says which
+  // basis the valued area came from.
+  const consideredLabel = `Area covered ${
+    areaConsideration ? areaConsideration.toLowerCase() : "as per actual"
+  } (Sq.m)`;
 
   return (
     <div className="flex flex-col gap-3 overflow-x-auto">
@@ -88,7 +105,8 @@ export function FloorsEditor({
         className={`grid ${COLUMNS} min-w-[900px] items-end gap-3 text-xs font-medium text-muted-foreground`}
       >
         <span>Floor</span>
-        <span>Covered area (Sq.m)</span>
+        <span>Actual area covered (Sq.m)</span>
+        <span>{consideredLabel}</span>
         <span>Replacement rate (₹/Sq.m)</span>
         <span>Roof type</span>
         <span>Year built</span>
@@ -118,6 +136,27 @@ export function FloorsEditor({
               name={`floors.${index}.name`}
               className="pb-0"
               disabled={disabled}
+            />
+            <FormInput
+              control={control}
+              name={`floors.${index}.actualAreaSqM`}
+              className="pb-0"
+              type="number"
+              step="0.01"
+              min="0"
+              parseValue={numberOrZero}
+              disabled={disabled}
+              onValueChange={(next) => {
+                // E49 = D49 in the sheet: the considered area follows the
+                // measured one until a different basis is entered against it.
+                const considered = floors[index]?.coveredAreaSqM;
+                const previousActual = floors[index]?.actualAreaSqM;
+                if (!considered || considered === previousActual) {
+                  setValue(`floors.${index}.coveredAreaSqM`, Number(next) || 0, {
+                    shouldDirty: true,
+                  });
+                }
+              }}
             />
             <FormInput
               control={control}

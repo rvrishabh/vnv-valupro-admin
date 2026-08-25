@@ -13,28 +13,31 @@ import {
 import FormDropdown from "@/components/Form/FormDropdown";
 import FormInput from "@/components/Form/FormInput";
 import { FormTextArea } from "@/components/Form/FormTextArea";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form } from "@/components/ui/form";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AreaOfSite } from "@/components/Valuation/AreaOfSite";
 import { CreatableSelect } from "@/components/Valuation/CreatableSelect";
 import {
   BUILDING_SPEC_FIELDS,
   DISCREPANCY_FIELDS,
+  FLOOR_DETAIL_FIELDS,
   GENERAL_FIELDS,
   LEASE_FIELDS,
+  ROOM_FIELDS,
   SITE_ADDRESS_FIELDS,
 } from "@/components/Valuation/field-groups";
 import { emptyFloor, FloorsEditor } from "@/components/Valuation/FloorsEditor";
 import { FloorSpecsEditor } from "@/components/Valuation/FloorSpecsEditor";
+import { LocationMap } from "@/components/Valuation/LocationMap";
 import { OptionSelect } from "@/components/Valuation/OptionSelect";
 import {
   FIELD_LABEL_CLASS,
   SectionFields,
 } from "@/components/Valuation/SectionFields";
 import { ValuationSummary } from "@/components/Valuation/ValuationSummary";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form } from "@/components/ui/form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toNumber, VALUATION_STATUS_VARIANT } from "@/lib/valuation-format";
 import type {
   Direction,
@@ -44,13 +47,18 @@ import type {
   ValuationFormValues,
 } from "@/types";
 import { IconDownload, IconRefresh } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 const METHODS = [
   { value: "LAND_AND_BUILDING", label: "Land & Building" },
   { value: "CRM", label: "Composite Rate (CRM)" },
   { value: "PLOT", label: "Vacant Plot" },
+];
+
+const AREA_UNITS = [
+  { value: "Sq.m", label: "Sq.m" },
+  { value: "Ha", label: "Hectares" },
 ];
 
 const DIMENSION_UNITS = [
@@ -78,7 +86,10 @@ const BOUNDARY_GRID = "grid-cols-[80px_1fr_1fr_110px_110px]";
 function toDirectionalSection(
   source: Record<string, unknown> | null,
 ): DirectionalSection {
-  const rows = (source ?? {}) as Record<string, DirectionalMeasurement | undefined>;
+  const rows = (source ?? {}) as Record<
+    string,
+    DirectionalMeasurement | undefined
+  >;
   return DIRECTIONS.reduce((section, direction) => {
     const row = rows[direction] ?? {};
     section[direction] = {
@@ -95,6 +106,12 @@ function toFormState(v: Valuation): FormState {
     propertyType: v.propertyType ?? "",
     reportYear: String(v.reportYear ?? new Date().getFullYear()),
     dimensionUnit: (v.dimensionUnit as FormState["dimensionUnit"]) ?? "ft",
+    areaUnit: (v.areaUnit as FormState["areaUnit"]) ?? "Sq.m",
+    areaBasis: v.areaBasis ?? "",
+    undividedShareOfLand: String(toNumber(v.undividedShareOfLand) ?? ""),
+    documentsReceived: v.documentsReceived ?? "",
+    gpsCoordinates: v.gpsCoordinates ?? "",
+    briefDescription: v.briefDescription ?? "",
     areaAsPerDeed: String(toNumber(v.areaAsPerDeed) ?? ""),
     areaAsPerSite: String(toNumber(v.areaAsPerSite) ?? ""),
     advanceReceived: String(toNumber(v.advanceReceived) ?? ""),
@@ -110,8 +127,10 @@ function toFormState(v: Valuation): FormState {
     expectedLifeYears: String(v.expectedLifeYears ?? 80),
     floors: (v.floors?.length ? v.floors : [emptyFloor(0)]).map((floor) => ({
       ...floor,
-      yearOfConstruction: floor.yearOfConstruction ?? v.yearOfConstruction ?? undefined,
-      expectedLifeYears: floor.expectedLifeYears ?? v.expectedLifeYears ?? undefined,
+      yearOfConstruction:
+        floor.yearOfConstruction ?? v.yearOfConstruction ?? undefined,
+      expectedLifeYears:
+        floor.expectedLifeYears ?? v.expectedLifeYears ?? undefined,
     })),
     titleDeed: v.titleDeed ?? {},
     leaseDetails: v.leaseDetails ?? {},
@@ -121,6 +140,8 @@ function toFormState(v: Valuation): FormState {
     dimensions: toDirectionalSection(v.dimensions),
     buildingSpecs: v.buildingSpecs ?? {},
     generalDetails: v.generalDetails ?? {},
+    rooms: v.rooms ?? {},
+    floorDetails: v.floorDetails ?? {},
     engineerNotes: v.engineerNotes ?? "",
   };
 }
@@ -137,7 +158,9 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
   const downloadMutation = useDownloadValuationPdfMutation();
 
   const form = useForm<FormState>();
-  const reviewForm = useForm<{ notes: string }>({ defaultValues: { notes: "" } });
+  const reviewForm = useForm<{ notes: string }>({
+    defaultValues: { notes: "" },
+  });
   const [isReady, setIsReady] = useState(false);
 
   const valuation = valuationQuery.data;
@@ -159,12 +182,57 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
   const method = useWatch({ control, name: "method" });
   const tenure = useWatch({ control, name: "tenure" });
   const dimensionUnit = useWatch({ control, name: "dimensionUnit" });
+  const roomCounts = useWatch({ control, name: "rooms" });
+  const methodValue = useWatch({ control, name: "method" });
+  const areaBasisValue = useWatch({ control, name: "areaBasis" });
+  const coveredAreaConsideration = useWatch({
+    control,
+    name: "buildingSpecs.coveredAreaConsideration",
+  }) as string | undefined;
+  const propertyTypeValue = useWatch({ control, name: "propertyType" });
+  const gpsCoordinatesValue = useWatch({ control, name: "gpsCoordinates" });
+
+  /**
+   * M-Doc!C120 — the sentence the report prints, rebuilt from the counts so it
+   * can never drift from the numbers above it.
+   */
+  const roomsSummary = useMemo(() => {
+    const parts = (
+      [
+        ["Living Rooms", roomCounts?.livingRooms],
+        ["Bed rooms", roomCounts?.bedRooms],
+        ["Water Closets", roomCounts?.waterClosets],
+        ["Kitchen", roomCounts?.kitchen],
+      ] as [string, unknown][]
+    )
+      .filter(([, count]) => Number(count) > 0)
+      .map(([label, count]) => `${count} ${label}`);
+
+    if (!parts.length) return null;
+
+    const subject = propertyTypeValue || "Property";
+    const last = parts.pop();
+    return parts.length
+      ? `${subject} has total of ${parts.join(", ")} & ${last}`
+      : `${subject} has total of ${last}`;
+  }, [roomCounts, propertyTypeValue]);
   const reportYear = useWatch({ control, name: "reportYear" });
   const yearOfConstruction = useWatch({ control, name: "yearOfConstruction" });
   const expectedLifeYears = useWatch({ control, name: "expectedLifeYears" });
   const boundaries = useWatch({ control, name: "boundaries" });
   const dimensions = useWatch({ control, name: "dimensions" });
   const ownerNameValue = useWatch({ control, name: "titleDeed.ownerName" });
+
+  useEffect(() => {
+    if (!methodValue || areaBasisValue) return;
+    form.setValue(
+      "areaBasis",
+      methodValue === "CRM" ? "Super Area" : "Plot Area",
+      {
+        shouldDirty: false,
+      },
+    );
+  }, [methodValue, areaBasisValue, form]);
 
   if (valuationQuery.isLoading || !isReady || !valuation) {
     return <p className="text-sm text-muted-foreground">Loading valuation…</p>;
@@ -210,12 +278,15 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
     direction: Direction,
     raw: string,
   ) => {
-    const row = (section === "boundaries" ? boundaries : dimensions)?.[direction] ?? {};
+    const row =
+      (section === "boundaries" ? boundaries : dimensions)?.[direction] ?? {};
     const site = String(row.asPerSite ?? "");
     const previousDocs = String(row.asPerDocs ?? "");
 
     if (site === "" || site === previousDocs) {
-      form.setValue(`${section}.${direction}.asPerSite`, raw, { shouldDirty: true });
+      form.setValue(`${section}.${direction}.asPerSite`, raw, {
+        shouldDirty: true,
+      });
     }
   };
 
@@ -228,15 +299,25 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
         reportYear: Number(data.reportYear) || undefined,
         // M-Rate's rate lookup keys off M-Doc!C48, which lives in the site
         // address block — so that is the single place the tehsil is entered.
-        tehsil: String(data.siteAddress.tehsilForCircleRates ?? "") || undefined,
+        tehsil:
+          String(data.siteAddress.tehsilForCircleRates ?? "") || undefined,
         dimensionUnit: data.dimensionUnit,
+        areaUnit: data.areaUnit,
+        areaBasis: data.areaBasis || undefined,
+        // Only a Flat is entered by hand; a Shop is derived and anything else
+        // has no share to state, both of which the backend resolves.
+        undividedShareOfLand: Number(data.undividedShareOfLand) || undefined,
+        documentsReceived: data.documentsReceived || undefined,
+        gpsCoordinates: data.gpsCoordinates || undefined,
+        briefDescription: data.briefDescription || undefined,
         areaAsPerDeed: Number(data.areaAsPerDeed) || undefined,
         areaAsPerSite: Number(data.areaAsPerSite) || undefined,
         advanceReceived: Number(data.advanceReceived) || undefined,
         assetsSoldAsPerDeed: data.assetsSoldAsPerDeed || undefined,
         tenure: data.tenure || undefined,
         // The backend drops this when tenure is Freehold.
-        leaseDetails: data.tenure === "Leasehold" ? data.leaseDetails : undefined,
+        leaseDetails:
+          data.tenure === "Leasehold" ? data.leaseDetails : undefined,
         land: {
           prevailingMarketRate: Number(data.prevailingMarketRate) || 0,
           circleRate: Number(data.circleRate) || 0,
@@ -256,6 +337,8 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
         dimensions: data.dimensions,
         buildingSpecs: data.buildingSpecs,
         generalDetails: data.generalDetails,
+        rooms: data.rooms,
+        floorDetails: data.floorDetails,
         engineerNotes: data.engineerNotes || undefined,
       },
     });
@@ -265,11 +348,16 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSave)} className="flex flex-col gap-5">
+      <form
+        onSubmit={form.handleSubmit(onSave)}
+        className="flex flex-col gap-5"
+      >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-semibold">{ownerName}</h3>
-            <Badge variant={VALUATION_STATUS_VARIANT[valuation.status] ?? "outline"}>
+            <Badge
+              variant={VALUATION_STATUS_VARIANT[valuation.status] ?? "outline"}
+            >
               {valuation.status}
             </Badge>
           </div>
@@ -293,7 +381,10 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
               <IconDownload className="mr-1 size-4" />
               {downloadMutation.isPending ? "Rendering…" : "Download PDF"}
             </Button>
-            <Button type="submit" disabled={updateMutation.isPending || readOnly}>
+            <Button
+              type="submit"
+              disabled={updateMutation.isPending || readOnly}
+            >
               {updateMutation.isPending ? "Saving…" : "Save draft"}
             </Button>
             {valuation.status === "DRAFT" ? (
@@ -313,7 +404,9 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
           <Tabs defaultValue="property">
             <TabsList className="flex-wrap">
               <TabsTrigger value="property">Property &amp; Title</TabsTrigger>
-              <TabsTrigger value="address">Address &amp; Boundaries</TabsTrigger>
+              <TabsTrigger value="address">
+                Address &amp; Boundaries
+              </TabsTrigger>
               <TabsTrigger value="rates">Rates &amp; Building</TabsTrigger>
               <TabsTrigger value="specs">Floor Specifications</TabsTrigger>
               <TabsTrigger value="general">General Details</TabsTrigger>
@@ -323,7 +416,9 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
             <TabsContent value="property" className="mt-4 flex flex-col gap-4">
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Basic / Office Data</CardTitle>
+                  <CardTitle className="text-base">
+                    Basic / Office Data
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-4 sm:grid-cols-2">
                   <FormDropdown
@@ -363,12 +458,39 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
                     type="number"
                     disabled={readOnly}
                   />
+
+                  <FormInput
+                    control={control}
+                    name="gpsCoordinates"
+                    label="GPS co-ordinates"
+                    labelClassName={FIELD_LABEL_CLASS}
+                    placeholder="27.565146, 78.652088"
+                    disabled={readOnly}
+                  />
+
+                  <div className="sm:col-span-2">
+                    <LocationMap coordinates={gpsCoordinatesValue ?? ""} />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <FormTextArea
+                      control={control}
+                      name="documentsReceived"
+                      label="Documents received"
+                      labelClassName={FIELD_LABEL_CLASS}
+                      rows={2}
+                      placeholder="Title Deed, Sale Deed & Legal Report"
+                      disabled={readOnly}
+                    />
+                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Ownership &amp; Title Deed</CardTitle>
+                  <CardTitle className="text-base">
+                    Ownership &amp; Title Deed
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-4 sm:grid-cols-2">
                   <FormInput
@@ -431,7 +553,9 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Freehold / Leasehold</CardTitle>
+                  <CardTitle className="text-base">
+                    Freehold / Leasehold
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-4 sm:grid-cols-2">
                   <OptionSelect
@@ -462,7 +586,9 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
             <TabsContent value="address" className="mt-4 flex flex-col gap-4">
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Address as per Site Visit</CardTitle>
+                  <CardTitle className="text-base">
+                    Address as per Site Visit
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-4 sm:grid-cols-2">
                   <SectionFields
@@ -477,20 +603,43 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
 
               <Card>
                 <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
-                  <CardTitle className="text-base">Boundaries &amp; Dimensions</CardTitle>
+                  <CardTitle className="text-base">
+                    Boundaries &amp; Dimensions
+                  </CardTitle>
                   {/* Both columns are captured in the same unit, as the sheet
                       does — the area below converts to Sq.m either way. */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Dimensions in</span>
-                    <FormDropdown
-                      control={control}
-                      name="dimensionUnit"
-                      options={DIMENSION_UNITS}
-                      allowClear={false}
-                      disabled={readOnly}
-                      className="gap-0"
-                      triggerClassName="h-8 w-[110px]"
-                    />
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        Dimensions in
+                      </span>
+                      <FormDropdown
+                        control={control}
+                        name="dimensionUnit"
+                        options={DIMENSION_UNITS}
+                        allowClear={false}
+                        disabled={readOnly}
+                        className="gap-0"
+                        triggerClassName="h-8 w-[90px]"
+                      />
+                    </div>
+                    {/* Areas carry their own unit (M-Doc!C92): a large plot is
+                        quoted in hectares while its sides are still measured
+                        in feet. */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        Area in
+                      </span>
+                      <FormDropdown
+                        control={control}
+                        name="areaUnit"
+                        options={AREA_UNITS}
+                        allowClear={false}
+                        disabled={readOnly}
+                        className="gap-0"
+                        triggerClassName="h-8 w-[90px]"
+                      />
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
@@ -529,7 +678,9 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
                         control={control}
                         name={`dimensions.${direction}.asPerDocs`}
                         className="pb-0"
-                        placeholder={dimensionUnit === "ft" ? "e.g. 30" : "e.g. 9.14"}
+                        placeholder={
+                          dimensionUnit === "ft" ? "e.g. 30" : "e.g. 9.14"
+                        }
                         disabled={readOnly}
                         onValueChange={(_next, raw) =>
                           mirrorDocsToSite("dimensions", direction, raw)
@@ -539,21 +690,27 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
                         control={control}
                         name={`dimensions.${direction}.asPerSite`}
                         className="pb-0"
-                        placeholder={dimensionUnit === "ft" ? "e.g. 30" : "e.g. 9.14"}
+                        placeholder={
+                          dimensionUnit === "ft" ? "e.g. 30" : "e.g. 9.14"
+                        }
                         disabled={readOnly}
                       />
                     </div>
                   ))}
 
                   <p className="text-xs text-muted-foreground">
-                    The site columns copy the document columns as you type. Edit a
-                    site value directly when the visit found something different —
-                    it then stops following the deed.
+                    The site columns copy the document columns as you type. Edit
+                    a site value directly when the visit found something
+                    different — it then stops following the deed.
                   </p>
                 </CardContent>
               </Card>
 
-              <AreaOfSite control={control} disabled={readOnly} />
+              <AreaOfSite
+                control={control}
+                disabled={readOnly}
+                options={options}
+              />
 
               <Card>
                 <CardHeader className="pb-3">
@@ -625,7 +782,9 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Building Component</CardTitle>
+                  <CardTitle className="text-base">
+                    Building Component
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4">
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -684,13 +843,16 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
                     buildingYear={Number(yearOfConstruction) || 0}
                     buildingLife={Number(expectedLifeYears) || 80}
                     reportYear={Number(reportYear) || new Date().getFullYear()}
+                    areaConsideration={coveredAreaConsideration}
                   />
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Building Specifications</CardTitle>
+                  <CardTitle className="text-base">
+                    Building Specifications
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-4 sm:grid-cols-2">
                   <SectionFields
@@ -743,7 +905,59 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Engineer Notes</CardTitle>
+                  <CardTitle className="text-base">No. of Rooms</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-4">
+                  <SectionFields
+                    control={control}
+                    section="rooms"
+                    fields={ROOM_FIELDS}
+                    options={options}
+                    disabled={readOnly}
+                  />
+                  {roomsSummary ? (
+                    <p className="text-xs text-muted-foreground sm:col-span-4">
+                      {roomsSummary}
+                    </p>
+                  ) : null}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Floor Details</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <SectionFields
+                    control={control}
+                    section="floorDetails"
+                    fields={FLOOR_DETAIL_FIELDS}
+                    options={options}
+                    disabled={readOnly}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">
+                    Brief Description of Property based on Site Visit
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <FormTextArea
+                    control={control}
+                    name="briefDescription"
+                    rows={3}
+                    placeholder="This is a two storey residential house with good quality construction."
+                    disabled={readOnly}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Remarks</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <FormTextArea
@@ -813,7 +1027,9 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base">Checker Notes</CardTitle>
                   </CardHeader>
-                  <CardContent className="text-sm">{valuation.checkerNotes}</CardContent>
+                  <CardContent className="text-sm">
+                    {valuation.checkerNotes}
+                  </CardContent>
                 </Card>
               ) : null}
             </TabsContent>

@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type {
   DirectionalSection,
   ValuationFormValues,
+  ValuationOptions,
 } from "@/types";
 import { type Control, useFormContext, useWatch } from "react-hook-form";
+import { OptionSelect } from "./OptionSelect";
 import { Field, FIELD_LABEL_CLASS } from "./SectionFields";
 
 /** Sq.ft -> Sq.m divisor used throughout the workbook (M-Doc!C100). */
@@ -96,20 +98,42 @@ const numberOrNull = (value: string): number | null => {
 export function AreaOfSite({
   control,
   disabled,
+  options,
 }: {
   control: Control<ValuationFormValues>;
   disabled?: boolean;
+  options?: ValuationOptions;
 }) {
   const { setValue } = useFormContext<ValuationFormValues>();
 
   const dimensionUnit = useWatch({ control, name: "dimensionUnit" });
+  const areaUnit = useWatch({ control, name: "areaUnit" });
   const dimensions = useWatch({ control, name: "dimensions" });
   const asPerDeed = useWatch({ control, name: "areaAsPerDeed" });
   const asPerSite = useWatch({ control, name: "areaAsPerSite" });
+  const propertyType = useWatch({ control, name: "propertyType" });
 
   const unit: DimensionUnit = dimensionUnit ?? "ft";
+  // Areas are computed in Sq.m and presented in whatever unit was chosen;
+  // 1 hectare is 10,000 Sq.m (M-Doc!C92).
+  const areaLabel = areaUnit === "Ha" ? "Ha" : "Sq.m";
+  const inAreaUnit = (sqm: number | null): string =>
+    sqm === null
+      ? "—"
+      : areaUnit === "Ha"
+        ? `${(sqm / 10000).toFixed(4)} Ha`
+        : `${sqm} Sq.m`;
   const areaFromDocs = areaFromSides(sidesFor(dimensions, "asPerDocs"), unit);
   const areaFromSite = areaFromSides(sidesFor(dimensions, "asPerSite"), unit);
+
+  // M-Doc!C110 — a shop's undivided share is its own area, a flat's has to be
+  // read off the deed, and anything else owns its land outright.
+  const shareMode =
+    String(propertyType ?? "").toLowerCase() === "flat"
+      ? "entered"
+      : String(propertyType ?? "").toLowerCase() === "shop"
+        ? "derived"
+        : "not-applicable";
 
   const consideration = resolveConsideration(
     numberOrNull(asPerDeed ?? ""),
@@ -136,20 +160,20 @@ export function AreaOfSite({
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Area as per dimensions (documents)">
             <div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm tabular-nums">
-              {areaFromDocs === null ? "—" : `${areaFromDocs} Sq.m`}
+              {inAreaUnit(areaFromDocs)}
             </div>
           </Field>
 
           <Field label="Area as per dimensions (site)">
             <div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm tabular-nums">
-              {areaFromSite === null ? "—" : `${areaFromSite} Sq.m`}
+              {inAreaUnit(areaFromSite)}
             </div>
           </Field>
 
           <FormInput
             control={control}
             name="areaAsPerDeed"
-            label="Area of property as per deed (Sq.m)"
+            label={`Area of property as per deed (${areaLabel})`}
             labelClassName={FIELD_LABEL_CLASS}
             type="number"
             step="0.01"
@@ -161,7 +185,7 @@ export function AreaOfSite({
           <FormInput
             control={control}
             name="areaAsPerSite"
-            label="Area of property as per site (Sq.m)"
+            label={`Area of property as per site (${areaLabel})`}
             labelClassName={FIELD_LABEL_CLASS}
             type="number"
             step="0.01"
@@ -177,7 +201,7 @@ export function AreaOfSite({
               Area under consideration for valuation
             </span>
             <span className="text-base font-semibold tabular-nums text-primary">
-              {consideration.value === null ? "—" : `${consideration.value} Sq.m`}
+              {inAreaUnit(consideration.value)}
             </span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -187,6 +211,41 @@ export function AreaOfSite({
                 ? `Deed and site differ — the lesser (as per ${consideration.source}) is valued.`
                 : "Deed and site agree — valued as per the deed."}
           </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <OptionSelect
+            control={control}
+            name="areaBasis"
+            label="Area under consideration"
+            group="areaBasis"
+            options={options}
+            disabled={disabled}
+          />
+
+          {/* Only a flat needs the share typing in — a shop's equals its area
+              and everything else has none to state (M-Doc!C110). */}
+          {shareMode === "entered" ? (
+            <FormInput
+              control={control}
+              name="undividedShareOfLand"
+              label={`Undivided share of land (${areaLabel})`}
+              labelClassName={FIELD_LABEL_CLASS}
+              type="number"
+              step="0.01"
+              min="0"
+              hint="Read from the deed for a flat in a multi-storey block."
+              disabled={disabled}
+            />
+          ) : (
+            <Field label="Undivided share of land">
+              <p className="text-sm text-muted-foreground">
+                {shareMode === "derived"
+                  ? `Same as the area under consideration — ${inAreaUnit(consideration.value)}.`
+                  : "Not mentioned in documents for this property type."}
+              </p>
+            </Field>
+          )}
         </div>
       </CardContent>
     </Card>

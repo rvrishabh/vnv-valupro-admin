@@ -55,6 +55,26 @@ export const LEASE_FIELDS: FieldDef[] = [
   { key: "easementAgreements", label: "Are there any agreements of easement?", cell: "C69" },
 ];
 
+/** M-Doc!C115:C118 — accommodation counts, summarised into C120 on the report. */
+export const ROOM_FIELDS: FieldDef[] = [
+  { key: "livingRooms", label: "Living Rooms", type: "number", cell: "C115" },
+  { key: "bedRooms", label: "Bed rooms", type: "number", cell: "C116" },
+  { key: "waterClosets", label: "Water Closets", type: "number", cell: "C117" },
+  { key: "kitchen", label: "Kitchen", type: "number", cell: "C118" },
+];
+
+/** M-Doc!C122:C124 — floor details. */
+export const FLOOR_DETAIL_FIELDS: FieldDef[] = [
+  { key: "totalFloors", label: "Total No. of Floors", group: "totalFloors", cell: "C122" },
+  {
+    key: "floorSituated",
+    label: "Floor on which flat/shop is situated",
+    group: "floorSituated",
+    cell: "C123",
+  },
+  { key: "flatType", label: "Flat Type", group: "flatType", cell: "C124" },
+];
+
 /** M-Doc!C80:C87 — discrepancy checks and road frontage. */
 export const DISCREPANCY_FIELDS: FieldDef[] = [
   {
@@ -81,8 +101,14 @@ export const DISCREPANCY_FIELDS: FieldDef[] = [
   },
   {
     key: "roadSide",
-    label: "Roads/streets the land abuts",
+    label: "Roads, streets or lanes the land abuts or is surrounded by",
     type: "textarea",
+    cell: "C85",
+  },
+  {
+    key: "propertyFacing",
+    label: "Which side is the property facing",
+    group: "propertyFacing",
     cell: "C85",
   },
   {
@@ -113,37 +139,37 @@ export const BUILDING_SPEC_FIELDS: FieldDef[] = [
 
 /** M-Gen — approval, occupancy, locational and miscellaneous details. */
 export const GENERAL_FIELDS: FieldDef[] = [
-  { key: "approvedColony", label: "Whether approved or unapproved colony", group: "approvedColony", cell: "C3" },
-  { key: "buildingPlanApproved", label: "Is building plan approved", group: "buildingPlanApproved", cell: "C4" },
-  { key: "approvingAuthority", label: "Name of approving authority", group: "approvingAuthority", cell: "C5" },
+  { key: "approvedColony", label: "Whether approved or unapproved colony", group: "approvedColony", creatable: true, cell: "C3" },
+  { key: "buildingPlanApproved", label: "Is building plan approved", group: "buildingPlanApproved", creatable: true, cell: "C4" },
+  { key: "approvingAuthority", label: "Name of approving authority", group: "approvingAuthority", creatable: true, cell: "C5" },
   {
     key: "constructionAsPerLayout",
     label: "Construction as per approved layout",
-    group: "constructionAsPerLayout",
+    group: "constructionAsPerLayout", creatable: true,
     cell: "C6",
   },
-  { key: "natureOfViolations", label: "Nature & extent of violations", group: "natureOfViolations", cell: "C8" },
-  { key: "propertyTaxPaid", label: "Property tax paid", group: "propertyTaxPaid", cell: "C9" },
-  { key: "occupancyStatus", label: "Owner occupied / tenanted / both", group: "occupancyStatus", cell: "C10" },
-  { key: "tenancy", label: "Tenancy", group: "tenancy", cell: "C14" },
-  { key: "cityTownVillage", label: "City / Town / Village", group: "cityTownVillage", cell: "C24" },
-  { key: "approvedLandUse", label: "Approved land use / classification", group: "approvedLandUse", cell: "C25" },
-  { key: "purposeOfUse", label: "Purpose for which property is used", group: "purposeOfUse", cell: "C26" },
-  { key: "classOfLocality", label: "Middle / Lower / Upper class people", group: "classOfLocality", cell: "C27" },
-  { key: "urbanSemiUrbanRural", label: "Urban / Semi-urban / Rural", group: "urbanSemiUrbanRural", cell: "C28" },
-  { key: "corporationLimit", label: "Corporation limit / Village Panchayat", group: "corporationLimit", cell: "C29" },
-  { key: "restrictiveCovenant", label: "Any restrictive covenant", group: "restrictiveCovenant", cell: "C30" },
+  { key: "natureOfViolations", label: "Nature & extent of violations", group: "natureOfViolations", creatable: true, cell: "C8" },
+  { key: "propertyTaxPaid", label: "Property tax paid", group: "propertyTaxPaid", creatable: true, cell: "C9" },
+  { key: "occupancyStatus", label: "Owner occupied / tenanted / both", group: "occupancyStatus", creatable: true, cell: "C10" },
+  { key: "tenancy", label: "Tenancy", group: "tenancy", creatable: true, cell: "C14" },
+  { key: "cityTownVillage", label: "City / Town / Village", group: "cityTownVillage", creatable: true, cell: "C24" },
+  { key: "approvedLandUse", label: "Approved land use / classification", group: "approvedLandUse", creatable: true, cell: "C25" },
+  { key: "purposeOfUse", label: "Purpose for which property is used", group: "purposeOfUse", creatable: true, cell: "C26" },
+  { key: "classOfLocality", label: "Middle / Lower / Upper class people", group: "classOfLocality", creatable: true, cell: "C27" },
+  { key: "urbanSemiUrbanRural", label: "Urban / Semi-urban / Rural", group: "urbanSemiUrbanRural", creatable: true, cell: "C28" },
+  { key: "corporationLimit", label: "Corporation limit / Village Panchayat", group: "corporationLimit", creatable: true, cell: "C29" },
+  { key: "restrictiveCovenant", label: "Any restrictive covenant", group: "restrictiveCovenant", creatable: true, cell: "C30" },
   {
     key: "usedForSanctionedPurpose",
     label: "Used for the sanctioned purpose?",
-    group: "usedForSanctionedPurpose",
+    group: "usedForSanctionedPurpose", creatable: true,
     cell: "C31",
   },
-  { key: "proximityToAmenities", label: "Proximity to civic amenities", group: "proximityToAmenities", cell: "C32" },
-  { key: "developmentOfArea", label: "Development of surrounding area", group: "developmentOfArea", cell: "C37" },
-  { key: "levelOfLand", label: "Level of land with topographical conditions", group: "levelOfLand", cell: "C38" },
-  { key: "roadFacilities", label: "Road facilities", group: "roadFacilities", cell: "C39" },
-  { key: "floodingProne", label: "Locality subject to frequent flooding?", group: "floodingProne", cell: "C44" },
-  { key: "plotShape", label: "Shape of plot", group: "plotShape", cell: "C47" },
-  { key: "powerSupply", label: "Power supply available on site", group: "powerSupply", cell: "C68" },
+  { key: "proximityToAmenities", label: "Proximity to civic amenities", group: "proximityToAmenities", creatable: true, cell: "C32" },
+  { key: "developmentOfArea", label: "Development of surrounding area", group: "developmentOfArea", creatable: true, cell: "C37" },
+  { key: "levelOfLand", label: "Level of land with topographical conditions", group: "levelOfLand", creatable: true, cell: "C38" },
+  { key: "roadFacilities", label: "Road facilities", group: "roadFacilities", creatable: true, cell: "C39" },
+  { key: "floodingProne", label: "Locality subject to frequent flooding?", group: "floodingProne", creatable: true, cell: "C44" },
+  { key: "plotShape", label: "Shape of plot", group: "plotShape", creatable: true, cell: "C47" },
+  { key: "powerSupply", label: "Power supply available on site", group: "powerSupply", creatable: true, cell: "C68" },
 ];
