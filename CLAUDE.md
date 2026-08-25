@@ -54,6 +54,19 @@ etc.) and use what's there:
 3. Only write something directly inline in the route/-components file if it's a one-off that isn't worth
    generalizing.
 
+## State management: react-hook-form and jotai
+
+- Any form (a group of fields with a save/submit action, including multi-section editors that patch
+  nested objects) manages its field state with `react-hook-form` (`useForm`, `useWatch`/`watch`,
+  `setValue`, `Controller` where a field isn't a plain `<input>`), not a hand-rolled
+  `useState`/`setState`-with-spread object. Reach for `@hookform/resolvers/zod` plus a schema from
+  `src/schemas/` when the payload already has one; a purely local form state doesn't need validation added
+  just to satisfy this rule.
+- Reach for `jotai` only when state must be shared across components that aren't in a parent/child
+  relationship react-hook-form's `FormProvider`/prop-drilling can reasonably cover (e.g. state shared
+  across routes or independent parts of the tree). Don't add a jotai atom for state that's local to one
+  component or one form — that's still `useState` or react-hook-form's own state.
+
 ## Other standing rules
 
 - The "admin" role's permissions must never be editable in the app.

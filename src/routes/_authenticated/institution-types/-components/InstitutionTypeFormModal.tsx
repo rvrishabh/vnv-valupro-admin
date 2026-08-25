@@ -39,10 +39,10 @@ export function InstitutionTypeFormModal({
         >
           <FormInput control={form.control} name="name" label="Name" required />
           <FormTextArea
-            {...form.register("description")}
+            control={form.control}
+            name="description"
             label="Description"
             placeholder="Optional description"
-            error={form.formState.errors.description?.message}
           />
           <Button type="submit" className="w-full mt-2" disabled={isSaving}>
             {isSaving ? "Saving…" : "Save"}

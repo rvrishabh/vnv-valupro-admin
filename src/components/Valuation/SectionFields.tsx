@@ -1,11 +1,19 @@
-import { Input } from "@/components/ui/input";
+import FormInput from "@/components/Form/FormInput";
+import { FormTextArea } from "@/components/Form/FormTextArea";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import type { ValuationOptions } from "@/types";
+import type { Control, FieldValues, Path } from "react-hook-form";
 import { CreatableSelect } from "./CreatableSelect";
 import type { FieldDef } from "./field-groups";
 import { OptionSelect } from "./OptionSelect";
 
+/** Shared label styling for the valuation form's dense field grids. */
+export const FIELD_LABEL_CLASS = "text-xs text-muted-foreground";
+
+/**
+ * Layout wrapper for a value the form only displays — a computed area, say.
+ * Editable fields use the Form components, which render their own label.
+ */
 export function Field({
   label,
   children,
@@ -17,7 +25,7 @@ export function Field({
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <Label className={FIELD_LABEL_CLASS}>{label}</Label>
       {children}
       {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
     </div>
@@ -25,67 +33,82 @@ export function Field({
 }
 
 /**
- * Renders a declarative field list against a plain record. A field with an
- * option group becomes a dropdown, everything else a text input — which is what
- * keeps the form and the workbook's data validations in step.
+ * Renders a declarative field list against one section of the form. A field
+ * with an option group becomes a dropdown, everything else a text input —
+ * which is what keeps the form and the workbook's data validations in step.
  */
-export function SectionFields({
+export function SectionFields<TFieldValues extends FieldValues = FieldValues>({
+  control,
+  section,
   fields,
-  values,
   options,
   disabled,
-  onChange,
 }: {
+  control: Control<TFieldValues>;
+  /** Path of the form section these keys hang off, e.g. `"siteAddress"`. */
+  section: string;
   fields: FieldDef[];
-  values: Record<string, unknown>;
   options?: ValuationOptions;
   disabled?: boolean;
-  onChange: (key: string, value: string) => void;
 }) {
   return (
     <>
       {fields.map((field) => {
-        const value = values?.[field.key] === undefined ? "" : String(values[field.key]);
+        const name = `${section}.${field.key}` as Path<TFieldValues>;
+
+        if (field.group && field.creatable) {
+          return (
+            <CreatableSelect
+              key={field.key}
+              control={control}
+              name={name}
+              label={field.label}
+              group={field.group}
+              options={options}
+              disabled={disabled}
+            />
+          );
+        }
+
+        if (field.group) {
+          return (
+            <OptionSelect
+              key={field.key}
+              control={control}
+              name={name}
+              label={field.label}
+              group={field.group}
+              options={options}
+              disabled={disabled}
+            />
+          );
+        }
+
+        if (field.type === "textarea") {
+          return (
+            <FormTextArea
+              key={field.key}
+              control={control}
+              name={name}
+              label={field.label}
+              labelClassName={FIELD_LABEL_CLASS}
+              rows={2}
+              className="field-sizing-fixed min-w-0"
+              disabled={disabled}
+            />
+          );
+        }
 
         return (
-          <Field
+          <FormInput
             key={field.key}
+            control={control}
+            name={name}
             label={field.label}
-            hint={field.type === "textarea" ? undefined : undefined}
-          >
-            {field.group && field.creatable ? (
-              <CreatableSelect
-                group={field.group}
-                options={options}
-                value={value}
-                disabled={disabled}
-                onChange={(v) => onChange(field.key, v)}
-              />
-            ) : field.group ? (
-              <OptionSelect
-                group={field.group}
-                options={options}
-                value={value}
-                disabled={disabled}
-                onChange={(v) => onChange(field.key, v)}
-              />
-            ) : field.type === "textarea" ? (
-              <Textarea
-                rows={2}
-                className="field-sizing-fixed min-w-0"
-                value={value}
-                disabled={disabled}
-                onChange={(e) => onChange(field.key, e.target.value)}
-              />
-            ) : (
-              <Input
-                type={field.type === "number" ? "number" : "text"}
-                value={value}
-                disabled={disabled}
-                onChange={(e) => onChange(field.key, e.target.value)}
-              />
-            )}
-          </Field>
+            labelClassName={FIELD_LABEL_CLASS}
+            type={field.type === "number" ? "number" : "text"}
+            disabled={disabled}
+          />
         );
       })}
     </>

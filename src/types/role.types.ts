@@ -39,3 +39,11 @@ export interface ListRolesQuery {
   loginChannel?: LoginChannel;
   isSystem?: boolean;
 }
+
+/**
+ * The permissions matrix form: one boolean per permission id, keyed so a
+ * checkbox binds straight to `permissions.<id>`.
+ */
+export interface RolePermissionsFormValues {
+  permissions: Record<string, boolean>;
+}

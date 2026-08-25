@@ -49,10 +49,10 @@ export function RoleFormModal({
             ]}
           />
           <FormTextArea
-            {...form.register("description")}
+            control={form.control}
+            name="description"
             label="Description"
             placeholder="Optional description"
-            error={form.formState.errors.description?.message}
           />
           <Button type="submit" className="w-full mt-2" disabled={isSaving}>
             {isSaving ? "Saving…" : "Save"}

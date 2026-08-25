@@ -90,3 +90,9 @@ export interface CaseTimeline {
   };
   events: CaseAuditEvent[];
 }
+
+/** The case detail page's workflow actions form (assign / notes). */
+export interface WorkflowActionsFormValues {
+  engineerId: string;
+  notes: string;
+}

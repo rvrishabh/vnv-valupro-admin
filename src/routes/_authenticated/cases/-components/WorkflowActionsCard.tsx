@@ -5,13 +5,13 @@ import {
   useStartSurveyMutation,
 } from "@/api/mutations/cases";
 import { useUsersQuery } from "@/api/queries/users";
-import { Dropdown } from "@/components/Dropdowns/Dropdown";
+import FormComboBox from "@/components/Form/FormComboBox";
+import { FormTextArea } from "@/components/Form/FormTextArea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import type { CaseStatus } from "@/types";
-import { useState } from "react";
+import { Form } from "@/components/ui/form";
+import type { CaseStatus, WorkflowActionsFormValues } from "@/types";
+import { useForm, useWatch } from "react-hook-form";
 
 interface WorkflowActionsCardProps {
   caseId: string;
@@ -26,8 +26,12 @@ export function WorkflowActionsCard({ caseId, status }: WorkflowActionsCardProps
   const completeSurvey = useCompleteSurveyMutation();
   const raiseQuery = useRaiseQueryMutation();
 
-  const [engineerId, setEngineerId] = useState("");
-  const [notes, setNotes] = useState("");
+  const form = useForm<WorkflowActionsFormValues>({
+    defaultValues: { engineerId: "", notes: "" },
+  });
+  const { control } = form;
+  const engineerId = useWatch({ control, name: "engineerId" });
+  const notes = useWatch({ control, name: "notes" });
 
   const canAssign = status === "PENDING" || status === "ASSIGNED";
   const canStart = status === "ASSIGNED";
@@ -40,48 +44,48 @@ export function WorkflowActionsCard({ caseId, status }: WorkflowActionsCardProps
         <CardTitle className="text-base">Workflow Actions</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {canAssign ? (
-          <div className="flex flex-col gap-2">
-            <Label className="text-xs text-muted-foreground">
-              Assign site visit to engineer
-            </Label>
-            <div className="flex gap-2">
-              <Dropdown
-                className="flex-1"
+        <Form {...form}>
+          {canAssign ? (
+            <div className="flex items-end gap-2">
+              <FormComboBox
+                control={control}
+                name="engineerId"
+                label="Assign site visit to engineer"
                 placeholder="Select engineer"
-                value={engineerId}
-                onChange={setEngineerId}
+                className="flex-1"
                 options={(usersQuery.data?.data ?? []).map((user) => ({
                   label: `${user.name} — ${user.role?.name ?? "user"}`,
                   value: user.id,
                 }))}
               />
               <Button
+                type="button"
                 disabled={!engineerId || assign.isPending}
                 onClick={() =>
-                  assign.mutate({ id: caseId, body: { engineerId, notes: notes || undefined } })
+                  assign.mutate({
+                    id: caseId,
+                    body: { engineerId, notes: notes || undefined },
+                  })
                 }
               >
                 Assign
               </Button>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        <div className="flex flex-col gap-2">
-          <Label className="text-xs text-muted-foreground">
-            Notes (attached to the next action)
-          </Label>
-          <Textarea
+          <FormTextArea
+            control={control}
+            name="notes"
+            label="Notes (attached to the next action)"
+            labelClassName="text-xs text-muted-foreground"
             rows={2}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
             placeholder="Optional note recorded in the audit trail"
           />
-        </div>
+        </Form>
 
         <div className="flex flex-wrap gap-2">
           <Button
+            type="button"
             variant="outline"
             disabled={!canStart || startSurvey.isPending}
             onClick={() => startSurvey.mutate({ id: caseId })}
@@ -89,6 +93,7 @@ export function WorkflowActionsCard({ caseId, status }: WorkflowActionsCardProps
             Start site visit
           </Button>
           <Button
+            type="button"
             variant="outline"
             disabled={!canComplete || completeSurvey.isPending}
             onClick={() => completeSurvey.mutate({ id: caseId, body: { notes } })}
@@ -96,6 +101,7 @@ export function WorkflowActionsCard({ caseId, status }: WorkflowActionsCardProps
             Complete site visit
           </Button>
           <Button
+            type="button"
             variant="destructive"
             disabled={!canQuery || !notes || raiseQuery.isPending}
             onClick={() => raiseQuery.mutate({ id: caseId, body: { notes } })}

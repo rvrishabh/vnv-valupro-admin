@@ -1,14 +1,9 @@
+import FormDropdown from "@/components/Form/FormDropdown";
+import FormInput from "@/components/Form/FormInput";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { FloorInput, RoofType } from "@/types";
+import type { FloorInput, RoofType, ValuationFormValues } from "@/types";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
+import { type Control, useFieldArray, useWatch } from "react-hook-form";
 
 const ROOF_TYPES: RoofType[] = ["RCC", "RBC", "Girder Stone", "Tin Shed", "Kachcha"];
 
@@ -51,44 +46,47 @@ export function emptyFloor(
  * remains the source of truth for the figures that reach the report.
  */
 function derive(
-  floor: FloorInput,
+  floor: FloorInput | undefined,
   buildingYear: number,
   buildingLife: number,
   reportYear: number,
 ) {
-  const year = floor.yearOfConstruction ?? buildingYear;
-  const life = floor.expectedLifeYears ?? buildingLife;
+  const year = floor?.yearOfConstruction ?? buildingYear;
+  const life = floor?.expectedLifeYears ?? buildingLife;
   const age = year > 0 ? Math.max(0, reportYear - year) : 0;
   const depreciationPercent = life > 0 ? (age / life) * DEPRECIABLE_FRACTION : 0;
 
   return { year, life, age, depreciationPercent, residualAge: life - age };
 }
 
+const numberOrZero = (raw: string) => (raw === "" ? 0 : Number(raw));
+const numberOrUndefined = (raw: string) => (raw === "" ? undefined : Number(raw));
+
+const COLUMNS = "grid-cols-[1.2fr_0.9fr_1fr_1fr_0.8fr_0.9fr_1.3fr_auto]";
+
 export function FloorsEditor({
-  floors,
-  onChange,
+  control,
   disabled,
   buildingYear = 0,
   buildingLife = 80,
   reportYear = new Date().getFullYear(),
 }: {
-  floors: FloorInput[];
-  onChange: (floors: FloorInput[]) => void;
+  control: Control<ValuationFormValues>;
   disabled?: boolean;
   buildingYear?: number;
   buildingLife?: number;
   reportYear?: number;
 }) {
-  const update = (index: number, patch: Partial<FloorInput>) => {
-    onChange(floors.map((f, i) => (i === index ? { ...f, ...patch } : f)));
-  };
-
-  const columns =
-    "grid-cols-[1.2fr_0.9fr_1fr_1fr_0.8fr_0.9fr_1.3fr_auto]";
+  const { fields, append, remove } = useFieldArray({ control, name: "floors" });
+  // Age and depreciation are derived as the valuer types, so this row-level
+  // view of the array has to stay subscribed to its values.
+  const floors = useWatch({ control, name: "floors" }) ?? [];
 
   return (
     <div className="flex flex-col gap-3 overflow-x-auto">
-      <div className={`grid ${columns} min-w-[900px] items-end gap-3 text-xs font-medium text-muted-foreground`}>
+      <div
+        className={`grid ${COLUMNS} min-w-[900px] items-end gap-3 text-xs font-medium text-muted-foreground`}
+      >
         <span>Floor</span>
         <span>Covered area (Sq.m)</span>
         <span>Replacement rate (₹/Sq.m)</span>
@@ -99,7 +97,8 @@ export function FloorsEditor({
         <span />
       </div>
 
-      {floors.map((floor, index) => {
+      {fields.map((field, index) => {
+        const floor = floors[index];
         const { year, life, age, depreciationPercent, residualAge } = derive(
           floor,
           buildingYear,
@@ -109,76 +108,68 @@ export function FloorsEditor({
         // Flagged only when this floor departs from the building default, so
         // an intentional override stands out in a long list of floors.
         const matchesBuilding =
-          floor.yearOfConstruction === undefined ||
+          floor?.yearOfConstruction === undefined ||
           floor.yearOfConstruction === buildingYear;
 
         return (
-          <div key={index} className={`grid ${columns} min-w-[900px] items-center gap-3`}>
-            <Input
-              value={floor.name}
+          <div key={field.id} className={`grid ${COLUMNS} min-w-[900px] items-center gap-3`}>
+            <FormInput
+              control={control}
+              name={`floors.${index}.name`}
+              className="pb-0"
               disabled={disabled}
-              onChange={(e) => update(index, { name: e.target.value })}
             />
-            <Input
+            <FormInput
+              control={control}
+              name={`floors.${index}.coveredAreaSqM`}
+              className="pb-0"
               type="number"
               step="0.01"
               min="0"
-              value={floor.coveredAreaSqM}
+              parseValue={numberOrZero}
               disabled={disabled}
-              onChange={(e) => update(index, { coveredAreaSqM: Number(e.target.value) })}
             />
-            <Input
+            <FormInput
+              control={control}
+              name={`floors.${index}.replacementRate`}
+              className="pb-0"
               type="number"
               step="1"
               min="0"
-              value={floor.replacementRate}
+              parseValue={numberOrZero}
               disabled={disabled}
-              onChange={(e) => update(index, { replacementRate: Number(e.target.value) })}
             />
-            <Select
-              value={floor.roofType}
+            <FormDropdown
+              control={control}
+              name={`floors.${index}.roofType`}
+              options={ROOF_TYPES.map((type) => ({ label: type, value: type }))}
+              allowClear={false}
               disabled={disabled}
-              onValueChange={(value) => update(index, { roofType: value as RoofType })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ROOF_TYPES.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
 
             {/* Pre-filled from the building's year; change it here when this
                 floor was added later, so it depreciates on its own age. */}
-            <Input
+            <FormInput
+              control={control}
+              name={`floors.${index}.yearOfConstruction`}
+              className="pb-0"
               type="number"
               step="1"
               min="1800"
               placeholder={buildingYear ? String(buildingYear) : "Year"}
-              value={floor.yearOfConstruction ?? ""}
+              parseValue={numberOrUndefined}
               disabled={disabled}
-              onChange={(e) =>
-                update(index, {
-                  yearOfConstruction: e.target.value ? Number(e.target.value) : undefined,
-                })
-              }
             />
-            <Input
+            <FormInput
+              control={control}
+              name={`floors.${index}.expectedLifeYears`}
+              className="pb-0"
               type="number"
               step="1"
               min="1"
               placeholder={String(buildingLife)}
-              value={floor.expectedLifeYears ?? ""}
+              parseValue={numberOrUndefined}
               disabled={disabled}
-              onChange={(e) =>
-                update(index, {
-                  expectedLifeYears: e.target.value ? Number(e.target.value) : undefined,
-                })
-              }
             />
 
             <div className="flex flex-col text-xs">
@@ -201,8 +192,8 @@ export function FloorsEditor({
               type="button"
               variant="ghost"
               size="icon"
-              disabled={disabled || floors.length === 1}
-              onClick={() => onChange(floors.filter((_, i) => i !== index))}
+              disabled={disabled || fields.length === 1}
+              onClick={() => remove(index)}
             >
               <IconTrash className="size-4" />
             </Button>
@@ -215,15 +206,14 @@ export function FloorsEditor({
           type="button"
           variant="outline"
           size="sm"
-          disabled={disabled || floors.length >= FLOOR_NAMES.length}
+          disabled={disabled || fields.length >= FLOOR_NAMES.length}
           onClick={() =>
-            onChange([
-              ...floors,
-              emptyFloor(floors.length, {
+            append(
+              emptyFloor(fields.length, {
                 yearOfConstruction: buildingYear || undefined,
                 expectedLifeYears: buildingLife || undefined,
               }),
-            ])
+            )
           }
         >
           <IconPlus className="mr-1 size-4" />

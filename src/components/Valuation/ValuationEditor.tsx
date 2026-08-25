@@ -10,10 +10,10 @@ import {
   useValuationPreviewQuery,
   useValuationQuery,
 } from "@/api/queries/valuations";
-import {
-  AreaOfSite,
-  type DimensionUnit,
-} from "@/components/Valuation/AreaOfSite";
+import FormDropdown from "@/components/Form/FormDropdown";
+import FormInput from "@/components/Form/FormInput";
+import { FormTextArea } from "@/components/Form/FormTextArea";
+import { AreaOfSite } from "@/components/Valuation/AreaOfSite";
 import { CreatableSelect } from "@/components/Valuation/CreatableSelect";
 import {
   BUILDING_SPEC_FIELDS,
@@ -25,25 +25,27 @@ import {
 import { emptyFloor, FloorsEditor } from "@/components/Valuation/FloorsEditor";
 import { FloorSpecsEditor } from "@/components/Valuation/FloorSpecsEditor";
 import { OptionSelect } from "@/components/Valuation/OptionSelect";
-import { Field, SectionFields } from "@/components/Valuation/SectionFields";
+import {
+  FIELD_LABEL_CLASS,
+  SectionFields,
+} from "@/components/Valuation/SectionFields";
 import { ValuationSummary } from "@/components/Valuation/ValuationSummary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Form } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { toNumber, VALUATION_STATUS_VARIANT } from "@/lib/valuation-format";
-import type { FloorInput, Valuation } from "@/types";
+import type {
+  Direction,
+  DirectionalMeasurement,
+  DirectionalSection,
+  Valuation,
+  ValuationFormValues,
+} from "@/types";
 import { IconDownload, IconRefresh } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 
 const METHODS = [
   { value: "LAND_AND_BUILDING", label: "Land & Building" },
@@ -51,48 +53,40 @@ const METHODS = [
   { value: "PLOT", label: "Vacant Plot" },
 ];
 
-const DIRECTIONS = ["north", "south", "east", "west"] as const;
+const DIMENSION_UNITS = [
+  { value: "ft", label: "Feet" },
+  { value: "m", label: "Metres" },
+];
 
-type Section = Record<string, unknown>;
+const DIRECTIONS: Direction[] = ["north", "south", "east", "west"];
 
-/** Pulls one column (docs or site) out of the per-direction dimensions blob. */
-function sidesFor(dimensions: Section, column: "asPerDocs" | "asPerSite") {
-  const source = dimensions as Record<string, Section | undefined>;
-  return {
-    north: String(source.north?.[column] ?? ""),
-    south: String(source.south?.[column] ?? ""),
-    east: String(source.east?.[column] ?? ""),
-    west: String(source.west?.[column] ?? ""),
-  };
-}
+/** M-Doc title-deed fields that are plain text in the sheet. */
+const TITLE_DEED_TEXT_FIELDS = [
+  { key: "deedNo", label: "Title deed no." },
+  { key: "bahiNo", label: "Bahi no." },
+  { key: "jildNo", label: "Jild no." },
+  { key: "purchaseDate", label: "Date of purchase as per deed" },
+  { key: "purchasePrice", label: "Purchase price as per deed" },
+  { key: "sellers", label: "Name of sellers as per deed" },
+] as const;
 
-interface FormState {
-  method: Valuation["method"];
-  propertyType: string;
-  reportYear: string;
-  dimensionUnit: DimensionUnit;
-  areaAsPerDeed: string;
-  areaAsPerSite: string;
-  advanceReceived: string;
-  assetsSoldAsPerDeed: string;
-  tenure: string;
-  prevailingMarketRate: string;
-  circleRate: string;
-  adoptedRate: string;
-  plotPosition: string;
-  superAreaPercent: string;
-  yearOfConstruction: string;
-  expectedLifeYears: string;
-  floors: FloorInput[];
-  titleDeed: Section;
-  leaseDetails: Section;
-  siteAddress: Section;
-  discrepancy: Section;
-  boundaries: Section;
-  dimensions: Section;
-  buildingSpecs: Section;
-  generalDetails: Section;
-  engineerNotes: string;
+type FormState = ValuationFormValues;
+
+const BOUNDARY_GRID = "grid-cols-[80px_1fr_1fr_110px_110px]";
+
+/** Widens the API's loose per-direction blob into the form's fixed shape. */
+function toDirectionalSection(
+  source: Record<string, unknown> | null,
+): DirectionalSection {
+  const rows = (source ?? {}) as Record<string, DirectionalMeasurement | undefined>;
+  return DIRECTIONS.reduce((section, direction) => {
+    const row = rows[direction] ?? {};
+    section[direction] = {
+      asPerDocs: String(row.asPerDocs ?? ""),
+      asPerSite: String(row.asPerSite ?? ""),
+    };
+    return section;
+  }, {} as DirectionalSection);
 }
 
 function toFormState(v: Valuation): FormState {
@@ -100,7 +94,7 @@ function toFormState(v: Valuation): FormState {
     method: v.method,
     propertyType: v.propertyType ?? "",
     reportYear: String(v.reportYear ?? new Date().getFullYear()),
-    dimensionUnit: (v.dimensionUnit as DimensionUnit) ?? "ft",
+    dimensionUnit: (v.dimensionUnit as FormState["dimensionUnit"]) ?? "ft",
     areaAsPerDeed: String(toNumber(v.areaAsPerDeed) ?? ""),
     areaAsPerSite: String(toNumber(v.areaAsPerSite) ?? ""),
     advanceReceived: String(toNumber(v.advanceReceived) ?? ""),
@@ -123,8 +117,8 @@ function toFormState(v: Valuation): FormState {
     leaseDetails: v.leaseDetails ?? {},
     siteAddress: v.siteAddress ?? {},
     discrepancy: v.discrepancy ?? {},
-    boundaries: v.boundaries ?? {},
-    dimensions: v.dimensions ?? {},
+    boundaries: toDirectionalSection(v.boundaries),
+    dimensions: toDirectionalSection(v.dimensions),
     buildingSpecs: v.buildingSpecs ?? {},
     generalDetails: v.generalDetails ?? {},
     engineerNotes: v.engineerNotes ?? "",
@@ -142,26 +136,43 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
   const reviewMutation = useReviewValuationMutation();
   const downloadMutation = useDownloadValuationPdfMutation();
 
-  const [form, setForm] = useState<FormState | null>(null);
-  const [reviewNotes, setReviewNotes] = useState("");
+  const form = useForm<FormState>();
+  const reviewForm = useForm<{ notes: string }>({ defaultValues: { notes: "" } });
+  const [isReady, setIsReady] = useState(false);
 
   const valuation = valuationQuery.data;
   const options = optionsQuery.data;
 
   useEffect(() => {
-    if (valuation) setForm(toFormState(valuation));
+    if (valuation) {
+      form.reset(toFormState(valuation));
+      setIsReady(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valuation]);
 
-  if (valuationQuery.isLoading || !form || !valuation) {
+  const { control } = form;
+
+  // Only the values this component itself branches on or displays — every
+  // field renders through a Form component bound to `control`, so nothing
+  // else needs to re-render on a keystroke.
+  const method = useWatch({ control, name: "method" });
+  const tenure = useWatch({ control, name: "tenure" });
+  const dimensionUnit = useWatch({ control, name: "dimensionUnit" });
+  const reportYear = useWatch({ control, name: "reportYear" });
+  const yearOfConstruction = useWatch({ control, name: "yearOfConstruction" });
+  const expectedLifeYears = useWatch({ control, name: "expectedLifeYears" });
+  const boundaries = useWatch({ control, name: "boundaries" });
+  const dimensions = useWatch({ control, name: "dimensions" });
+  const ownerNameValue = useWatch({ control, name: "titleDeed.ownerName" });
+
+  if (valuationQuery.isLoading || !isReady || !valuation) {
     return <p className="text-sm text-muted-foreground">Loading valuation…</p>;
   }
 
   const readOnly = valuation.status === "APPROVED";
-  const isLeasehold = form.tenure === "Leasehold";
-  const isPlot = form.method === "PLOT";
-
-  const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
-    setForm((prev) => (prev ? { ...prev, [key]: value } : prev));
+  const isLeasehold = tenure === "Leasehold";
+  const isPlot = method === "PLOT";
 
   /**
    * The building-level year and life are defaults, so changing one carries it
@@ -170,661 +181,652 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
    * it — which is why the previous default is compared rather than blindly
    * overwritten.
    */
-  const setBuildingDefault = (
+  const cascadeBuildingDefault = (
     key: "yearOfConstruction" | "expectedLifeYears",
-    value: string,
-  ) =>
-    setForm((prev) => {
-      if (!prev) return prev;
+    previousDefault: string,
+    raw: string,
+  ) => {
+    const next = raw === "" ? undefined : Number(raw);
 
-      const previousDefault = prev[key];
-      const next = value === "" ? undefined : Number(value);
-
-      return {
-        ...prev,
-        [key]: value,
-        floors: prev.floors.map((floor) => {
-          const current = floor[key];
-          const wasFollowing =
-            current === undefined || String(current) === previousDefault;
-          return wasFollowing ? { ...floor, [key]: next } : floor;
-        }),
-      };
+    form.getValues("floors").forEach((floor, index) => {
+      const current = floor[key];
+      const wasFollowing =
+        current === undefined || String(current) === previousDefault;
+      if (wasFollowing) {
+        form.setValue(`floors.${index}.${key}`, next, { shouldDirty: true });
+      }
     });
+  };
 
-  const setIn = (section: keyof FormState, key: string, value: unknown) =>
-    setForm((prev) =>
-      prev
-        ? { ...prev, [section]: { ...(prev[section] as Section), [key]: value } }
-        : prev,
-    );
+  /**
+   * The site column mirrors the documents until someone records something
+   * different on site — the sheet does this literally (M-Doc!C96 = B96,
+   * C78 = B78). Only a site value still equal to the previous documents value
+   * is carried along, so a real site observation is never overwritten by a
+   * later correction to the deed.
+   */
+  const mirrorDocsToSite = (
+    section: "boundaries" | "dimensions",
+    direction: Direction,
+    raw: string,
+  ) => {
+    const row = (section === "boundaries" ? boundaries : dimensions)?.[direction] ?? {};
+    const site = String(row.asPerSite ?? "");
+    const previousDocs = String(row.asPerDocs ?? "");
 
-  const handleSave = () => {
+    if (site === "" || site === previousDocs) {
+      form.setValue(`${section}.${direction}.asPerSite`, raw, { shouldDirty: true });
+    }
+  };
+
+  const onSave = (data: FormState) => {
     updateMutation.mutate({
       id,
       data: {
-        method: form.method,
-        propertyType: form.propertyType || undefined,
-        reportYear: Number(form.reportYear) || undefined,
+        method: data.method,
+        propertyType: data.propertyType || undefined,
+        reportYear: Number(data.reportYear) || undefined,
         // M-Rate's rate lookup keys off M-Doc!C48, which lives in the site
         // address block — so that is the single place the tehsil is entered.
-        tehsil: String(form.siteAddress.tehsilForCircleRates ?? "") || undefined,
-        dimensionUnit: form.dimensionUnit,
-        areaAsPerDeed: Number(form.areaAsPerDeed) || undefined,
-        areaAsPerSite: Number(form.areaAsPerSite) || undefined,
-        advanceReceived: Number(form.advanceReceived) || undefined,
-        assetsSoldAsPerDeed: form.assetsSoldAsPerDeed || undefined,
-        tenure: form.tenure || undefined,
+        tehsil: String(data.siteAddress.tehsilForCircleRates ?? "") || undefined,
+        dimensionUnit: data.dimensionUnit,
+        areaAsPerDeed: Number(data.areaAsPerDeed) || undefined,
+        areaAsPerSite: Number(data.areaAsPerSite) || undefined,
+        advanceReceived: Number(data.advanceReceived) || undefined,
+        assetsSoldAsPerDeed: data.assetsSoldAsPerDeed || undefined,
+        tenure: data.tenure || undefined,
         // The backend drops this when tenure is Freehold.
-        leaseDetails: isLeasehold ? form.leaseDetails : undefined,
+        leaseDetails: data.tenure === "Leasehold" ? data.leaseDetails : undefined,
         land: {
-          prevailingMarketRate: Number(form.prevailingMarketRate) || 0,
-          circleRate: Number(form.circleRate) || 0,
-          adoptedRate: Number(form.adoptedRate) || 0,
-          plotPosition: form.plotPosition || "Intermittent Plot",
-          superAreaPercent: (Number(form.superAreaPercent) || 0) / 100,
+          prevailingMarketRate: Number(data.prevailingMarketRate) || 0,
+          circleRate: Number(data.circleRate) || 0,
+          adoptedRate: Number(data.adoptedRate) || 0,
+          plotPosition: data.plotPosition || "Intermittent Plot",
+          superAreaPercent: (Number(data.superAreaPercent) || 0) / 100,
         },
         building: {
-          yearOfConstruction: Number(form.yearOfConstruction) || 0,
-          expectedLifeYears: Number(form.expectedLifeYears) || 80,
-          floors: form.floors,
+          yearOfConstruction: Number(data.yearOfConstruction) || 0,
+          expectedLifeYears: Number(data.expectedLifeYears) || 80,
+          floors: data.floors,
         },
-        titleDeed: form.titleDeed,
-        siteAddress: form.siteAddress,
-        discrepancy: form.discrepancy,
-        boundaries: form.boundaries,
-        dimensions: form.dimensions,
-        buildingSpecs: form.buildingSpecs,
-        generalDetails: form.generalDetails,
-        engineerNotes: form.engineerNotes || undefined,
+        titleDeed: data.titleDeed,
+        siteAddress: data.siteAddress,
+        discrepancy: data.discrepancy,
+        boundaries: data.boundaries,
+        dimensions: data.dimensions,
+        buildingSpecs: data.buildingSpecs,
+        generalDetails: data.generalDetails,
+        engineerNotes: data.engineerNotes || undefined,
       },
     });
   };
 
-  const ownerName = String(form.titleDeed.ownerName ?? "") || "Untitled draft";
+  const ownerName = String(ownerNameValue ?? "") || "Untitled draft";
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold">{ownerName}</h3>
-          <Badge variant={VALUATION_STATUS_VARIANT[valuation.status] ?? "outline"}>
-            {valuation.status}
-          </Badge>
-        </div>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSave)} className="flex flex-col gap-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold">{ownerName}</h3>
+            <Badge variant={VALUATION_STATUS_VARIANT[valuation.status] ?? "outline"}>
+              {valuation.status}
+            </Badge>
+          </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            onClick={() => recalcMutation.mutate(id)}
-            disabled={recalcMutation.isPending || readOnly}
-          >
-            <IconRefresh className="mr-1 size-4" />
-            Recalculate
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => downloadMutation.mutate({ id })}
-            disabled={downloadMutation.isPending}
-          >
-            <IconDownload className="mr-1 size-4" />
-            {downloadMutation.isPending ? "Rendering…" : "Download PDF"}
-          </Button>
-          <Button onClick={handleSave} disabled={updateMutation.isPending || readOnly}>
-            {updateMutation.isPending ? "Saving…" : "Save draft"}
-          </Button>
-          {valuation.status === "DRAFT" ? (
+          <div className="flex flex-wrap gap-2">
             <Button
-              variant="secondary"
-              onClick={() => submitMutation.mutate(id)}
-              disabled={submitMutation.isPending}
+              type="button"
+              variant="outline"
+              onClick={() => recalcMutation.mutate(id)}
+              disabled={recalcMutation.isPending || readOnly}
             >
-              Submit for review
+              <IconRefresh className="mr-1 size-4" />
+              Recalculate
             </Button>
-          ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => downloadMutation.mutate({ id })}
+              disabled={downloadMutation.isPending}
+            >
+              <IconDownload className="mr-1 size-4" />
+              {downloadMutation.isPending ? "Rendering…" : "Download PDF"}
+            </Button>
+            <Button type="submit" disabled={updateMutation.isPending || readOnly}>
+              {updateMutation.isPending ? "Saving…" : "Save draft"}
+            </Button>
+            {valuation.status === "DRAFT" ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => submitMutation.mutate(id)}
+                disabled={submitMutation.isPending}
+              >
+                Submit for review
+              </Button>
+            ) : null}
+          </div>
         </div>
-      </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <Tabs defaultValue="property">
-          <TabsList className="flex-wrap">
-            <TabsTrigger value="property">Property &amp; Title</TabsTrigger>
-            <TabsTrigger value="address">Address &amp; Boundaries</TabsTrigger>
-            <TabsTrigger value="rates">Rates &amp; Building</TabsTrigger>
-            <TabsTrigger value="specs">Floor Specifications</TabsTrigger>
-            <TabsTrigger value="general">General Details</TabsTrigger>
-          </TabsList>
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <Tabs defaultValue="property">
+            <TabsList className="flex-wrap">
+              <TabsTrigger value="property">Property &amp; Title</TabsTrigger>
+              <TabsTrigger value="address">Address &amp; Boundaries</TabsTrigger>
+              <TabsTrigger value="rates">Rates &amp; Building</TabsTrigger>
+              <TabsTrigger value="specs">Floor Specifications</TabsTrigger>
+              <TabsTrigger value="general">General Details</TabsTrigger>
+            </TabsList>
 
-          {/* ---------------- Property & Title ---------------- */}
-          <TabsContent value="property" className="mt-4 flex flex-col gap-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Basic / Office Data</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <Field label="Method of valuation">
-                  <Select
-                    value={form.method}
+            {/* ---------------- Property & Title ---------------- */}
+            <TabsContent value="property" className="mt-4 flex flex-col gap-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Basic / Office Data</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <FormDropdown
+                    control={control}
+                    name="method"
+                    label="Method of valuation"
+                    options={METHODS}
+                    allowClear={false}
                     disabled={readOnly}
-                    onValueChange={(v) => set("method", v as Valuation["method"])}
-                  >
-                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {METHODS.map((m) => (
-                        <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
+                  />
 
-                <Field
-                  label="Specify type of property"
-                  hint="Pick from the list, or type a value that isn't there."
-                >
                   <CreatableSelect
+                    control={control}
+                    name="propertyType"
+                    label="Specify type of property"
+                    description="Pick from the list, or type a value that isn't there."
                     group="propertyType"
                     options={options}
-                    value={form.propertyType}
                     disabled={readOnly}
-                    onChange={(v) => set("propertyType", v)}
                   />
-                </Field>
 
-                <Field label="Report year" hint="Ages are measured against this year.">
-                  <Input
+                  <FormInput
+                    control={control}
+                    name="reportYear"
+                    label="Report year"
+                    labelClassName={FIELD_LABEL_CLASS}
+                    hint="Ages are measured against this year."
                     type="number"
-                    value={form.reportYear}
                     disabled={readOnly}
-                    onChange={(e) => set("reportYear", e.target.value)}
                   />
-                </Field>
 
-                <Field label="Advance received (₹)">
-                  <Input
+                  <FormInput
+                    control={control}
+                    name="advanceReceived"
+                    label="Advance received (₹)"
+                    labelClassName={FIELD_LABEL_CLASS}
                     type="number"
-                    value={form.advanceReceived}
                     disabled={readOnly}
-                    onChange={(e) => set("advanceReceived", e.target.value)}
                   />
-                </Field>
-
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Ownership &amp; Title Deed</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <Field label="Name of the owner(s)">
-                  <Input
-                    value={String(form.titleDeed.ownerName ?? "")}
-                    disabled={readOnly}
-                    onChange={(e) => setIn("titleDeed", "ownerName", e.target.value)}
-                  />
-                </Field>
-
-                <Field label="Type of ownership">
-                  <OptionSelect
-                    group="ownershipType"
-                    options={options}
-                    value={String(form.titleDeed.ownershipType ?? "")}
-                    disabled={readOnly}
-                    onChange={(v) => setIn("titleDeed", "ownershipType", v)}
-                  />
-                </Field>
-
-                <Field label="Are shares divided, then proportion">
-                  <OptionSelect
-                    group="sharesDivided"
-                    options={options}
-                    value={String(form.titleDeed.sharesDivided ?? "")}
-                    disabled={readOnly}
-                    onChange={(v) => setIn("titleDeed", "sharesDivided", v)}
-                  />
-                </Field>
-
-                <Field label="Assets sold as per title deed">
-                  <OptionSelect
-                    group="assetsSoldAsPerDeed"
-                    options={options}
-                    value={form.assetsSoldAsPerDeed}
-                    disabled={readOnly}
-                    onChange={(v) => set("assetsSoldAsPerDeed", v)}
-                  />
-                </Field>
-
-                <div className="sm:col-span-2">
-                  <Field label="Address of property mentioned in the deed">
-                    <Textarea
-                      rows={2}
-                      value={String(form.titleDeed.addressAsPerDeed ?? "")}
-                      disabled={readOnly}
-                      onChange={(e) => setIn("titleDeed", "addressAsPerDeed", e.target.value)}
-                    />
-                  </Field>
-                </div>
-
-                {[
-                  ["deedNo", "Title deed no."],
-                  ["bahiNo", "Bahi no."],
-                  ["jildNo", "Jild no."],
-                  ["purchaseDate", "Date of purchase as per deed"],
-                  ["purchasePrice", "Purchase price as per deed"],
-                  ["sellers", "Name of sellers as per deed"],
-                ].map(([key, label]) => (
-                  <Field key={key} label={label}>
-                    <Input
-                      value={String(form.titleDeed[key] ?? "")}
-                      disabled={readOnly}
-                      onChange={(e) => setIn("titleDeed", key, e.target.value)}
-                    />
-                  </Field>
-                ))}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Freehold / Leasehold</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <Field label="Leasehold / Freehold">
-                  <OptionSelect
-                    group="tenure"
-                    options={options}
-                    value={form.tenure}
-                    disabled={readOnly}
-                    onChange={(v) => set("tenure", v)}
-                  />
-                </Field>
-
-                {/* The sheet strikes these through for a freehold property, so
-                    they are hidden here rather than shown as N.A. */}
-                {isLeasehold ? (
-                  <SectionFields
-                    fields={LEASE_FIELDS}
-                    values={form.leaseDetails}
-                    options={options}
-                    disabled={readOnly}
-                    onChange={(k, v) => setIn("leaseDetails", k, v)}
-                  />
-                ) : null}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ---------------- Address & Boundaries ---------------- */}
-          <TabsContent value="address" className="mt-4 flex flex-col gap-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Address as per Site Visit</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <SectionFields
-                  fields={SITE_ADDRESS_FIELDS}
-                  values={form.siteAddress}
-                  options={options}
-                  disabled={readOnly}
-                  onChange={(k, v) => setIn("siteAddress", k, v)}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-base">Boundaries &amp; Dimensions</CardTitle>
-                {/* Both columns are captured in the same unit, as the sheet
-                    does — the area below converts to Sq.m either way. */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Dimensions in</span>
-                  <Select
-                    value={form.dimensionUnit}
-                    disabled={readOnly}
-                    onValueChange={(v) => set("dimensionUnit", v as DimensionUnit)}
-                  >
-                    <SelectTrigger className="h-8 w-[110px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ft">Feet</SelectItem>
-                      <SelectItem value="m">Metres</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3">
-                <div className="grid grid-cols-[80px_1fr_1fr_110px_110px] gap-3 text-xs font-medium text-muted-foreground">
-                  <span>Direction</span>
-                  <span>As per documents</span>
-                  <span>As per site</span>
-                  <span>Dim. docs ({form.dimensionUnit})</span>
-                  <span>Dim. site ({form.dimensionUnit})</span>
-                </div>
-                {DIRECTIONS.map((direction) => {
-                  const bound = (form.boundaries[direction] as Section) ?? {};
-                  const dim = (form.dimensions[direction] as Section) ?? {};
-                  const patch = (
-                    section: "boundaries" | "dimensions",
-                    field: "asPerDocs" | "asPerSite",
-                    value: string,
-                  ) =>
-                    setForm((prev) => {
-                      if (!prev) return prev;
-
-                      const rows = prev[section] as Section;
-                      const row = (rows[direction] as Section) ?? {};
-                      const patched: Section = { ...row, [field]: value };
-
-                      // The site column mirrors the documents until someone
-                      // records something different on site — the sheet does
-                      // this literally (M-Doc!C96 = B96, C78 = B78). Only a
-                      // site value still equal to the previous documents value
-                      // is carried along, so a real site observation is never
-                      // overwritten by a later correction to the deed.
-                      if (field === "asPerDocs") {
-                        const site = String(row.asPerSite ?? "");
-                        const previousDocs = String(row.asPerDocs ?? "");
-                        if (site === "" || site === previousDocs) {
-                          patched.asPerSite = value;
-                        }
-                      }
-
-                      return {
-                        ...prev,
-                        [section]: { ...rows, [direction]: patched },
-                      };
-                    });
-
-                  return (
-                    <div
-                      key={direction}
-                      className="grid grid-cols-[80px_1fr_1fr_110px_110px] items-center gap-3"
-                    >
-                      <span className="text-sm capitalize">{direction}</span>
-                      <Input
-                        value={String(bound.asPerDocs ?? "")}
-                        disabled={readOnly}
-                        onChange={(e) => patch("boundaries", "asPerDocs", e.target.value)}
-                      />
-                      <Input
-                        value={String(bound.asPerSite ?? "")}
-                        disabled={readOnly}
-                        onChange={(e) => patch("boundaries", "asPerSite", e.target.value)}
-                      />
-                      <Input
-                        value={String(dim.asPerDocs ?? "")}
-                        placeholder={form.dimensionUnit === "ft" ? "e.g. 30" : "e.g. 9.14"}
-                        disabled={readOnly}
-                        onChange={(e) => patch("dimensions", "asPerDocs", e.target.value)}
-                      />
-                      <Input
-                        value={String(dim.asPerSite ?? "")}
-                        placeholder={form.dimensionUnit === "ft" ? "e.g. 30" : "e.g. 9.14"}
-                        disabled={readOnly}
-                        onChange={(e) => patch("dimensions", "asPerSite", e.target.value)}
-                      />
-                    </div>
-                  );
-                })}
-                <p className="text-xs text-muted-foreground">
-                  The site columns copy the document columns as you type. Edit a
-                  site value directly when the visit found something different —
-                  it then stops following the deed.
-                </p>
-              </CardContent>
-            </Card>
-
-            <AreaOfSite
-              value={{ asPerDeed: form.areaAsPerDeed, asPerSite: form.areaAsPerSite }}
-              onChange={(next) =>
-                setForm((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        areaAsPerDeed: next.asPerDeed,
-                        areaAsPerSite: next.asPerSite,
-                      }
-                    : prev,
-                )
-              }
-              dimensionUnit={form.dimensionUnit}
-              docsSides={sidesFor(form.dimensions, "asPerDocs")}
-              siteSides={sidesFor(form.dimensions, "asPerSite")}
-              disabled={readOnly}
-            />
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Discrepancy Check</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <SectionFields
-                  fields={DISCREPANCY_FIELDS}
-                  values={form.discrepancy}
-                  options={options}
-                  disabled={readOnly}
-                  onChange={(k, v) => setIn("discrepancy", k, v)}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ---------------- Rates & Building ---------------- */}
-          <TabsContent value="rates" className="mt-4 flex flex-col gap-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Land Rates</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <Field label="Prevailing market rate (₹/Sq.m)">
-                  <Input type="number" value={form.prevailingMarketRate} disabled={readOnly}
-                    onChange={(e) => set("prevailingMarketRate", e.target.value)} />
-                </Field>
-                <Field label="Guideline / circle rate (₹/Sq.m)">
-                  <Input type="number" value={form.circleRate} disabled={readOnly}
-                    onChange={(e) => set("circleRate", e.target.value)} />
-                </Field>
-                <Field label="Unit rate adopted (₹/Sq.m)">
-                  <Input type="number" value={form.adoptedRate} disabled={readOnly}
-                    onChange={(e) => set("adoptedRate", e.target.value)} />
-                </Field>
-                <Field
-                  label="Corner plot or intermittent plot?"
-                  hint="Corner and park-facing plots attract a circle-rate uplift."
-                >
-                  <OptionSelect
-                    group="plotPosition"
-                    options={options}
-                    value={form.plotPosition}
-                    disabled={readOnly}
-                    onChange={(v) => set("plotPosition", v)}
-                  />
-                </Field>
-                <Field label="Extra for super area component (%)">
-                  <Input type="number" step="0.01" value={form.superAreaPercent} disabled={readOnly}
-                    onChange={(e) => set("superAreaPercent", e.target.value)} />
-                </Field>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Building Component</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field
-                    label="Year of construction"
-                    hint="Default for all floors; override per floor below."
-                  >
-                    <Input type="number" value={form.yearOfConstruction} disabled={readOnly}
-                      onChange={(e) => setBuildingDefault("yearOfConstruction", e.target.value)} />
-                  </Field>
-                  <Field
-                    label="Total estimated life (years)"
-                    hint="Default for all floors; override per floor below."
-                  >
-                    <Input type="number" value={form.expectedLifeYears} disabled={readOnly}
-                      onChange={(e) => setBuildingDefault("expectedLifeYears", e.target.value)} />
-                  </Field>
-                  <Field label="Total no. of floors">
-                    <OptionSelect
-                      group="totalFloors"
-                      options={options}
-                      value={String(form.buildingSpecs.totalFloors ?? "")}
-                      disabled={readOnly}
-                      onChange={(v) => setIn("buildingSpecs", "totalFloors", v)}
-                    />
-                  </Field>
-                  <Field label="Covered area under consideration">
-                    <OptionSelect
-                      group="coveredAreaConsideration"
-                      options={options}
-                      value={String(form.buildingSpecs.coveredAreaConsideration ?? "")}
-                      disabled={readOnly}
-                      onChange={(v) => setIn("buildingSpecs", "coveredAreaConsideration", v)}
-                    />
-                  </Field>
-                </div>
-                <FloorsEditor
-                  floors={form.floors}
-                  disabled={readOnly || isPlot}
-                  buildingYear={Number(form.yearOfConstruction) || 0}
-                  buildingLife={Number(form.expectedLifeYears) || 80}
-                  reportYear={Number(form.reportYear) || new Date().getFullYear()}
-                  onChange={(floors) => set("floors", floors)}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Building Specifications</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <SectionFields
-                  fields={BUILDING_SPEC_FIELDS}
-                  values={form.buildingSpecs}
-                  options={options}
-                  disabled={readOnly}
-                  onChange={(k, v) => setIn("buildingSpecs", k, v)}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ---------------- Floor Specifications ---------------- */}
-          <TabsContent value="specs" className="mt-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">
-                  Specifications &amp; Covered Area Rates — per floor
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <FloorSpecsEditor
-                  floors={form.floors}
-                  options={options}
-                  disabled={readOnly || isPlot}
-                  onChange={(floors) => set("floors", floors)}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ---------------- General ---------------- */}
-          <TabsContent value="general" className="mt-4 flex flex-col gap-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">
-                  Approval, Occupancy &amp; Locational Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <SectionFields
-                  fields={GENERAL_FIELDS}
-                  values={form.generalDetails}
-                  options={options}
-                  disabled={readOnly}
-                  onChange={(k, v) => setIn("generalDetails", k, v)}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Engineer Notes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  rows={4}
-                  value={form.engineerNotes}
-                  disabled={readOnly}
-                  onChange={(e) => set("engineerNotes", e.target.value)}
-                />
-              </CardContent>
-            </Card>
-
-            {valuation.status === "SUBMITTED" ? (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Checker Review</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3">
-                  <Textarea
-                    rows={3}
-                    placeholder="Review notes"
-                    value={reviewNotes}
-                    onChange={(e) => setReviewNotes(e.target.value)}
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() =>
-                        reviewMutation.mutate({
-                          id,
-                          data: { decision: "approved", notes: reviewNotes },
-                        })
-                      }
-                      disabled={reviewMutation.isPending}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() =>
-                        reviewMutation.mutate({
-                          id,
-                          data: { decision: "rejected", notes: reviewNotes },
-                        })
-                      }
-                      disabled={reviewMutation.isPending}
-                    >
-                      Reject
-                    </Button>
-                  </div>
                 </CardContent>
               </Card>
-            ) : null}
 
-            {valuation.checkerNotes ? (
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Checker Notes</CardTitle>
+                  <CardTitle className="text-base">Ownership &amp; Title Deed</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm">{valuation.checkerNotes}</CardContent>
-              </Card>
-            ) : null}
-          </TabsContent>
-        </Tabs>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <FormInput
+                    control={control}
+                    name="titleDeed.ownerName"
+                    label="Name of the owner(s)"
+                    labelClassName={FIELD_LABEL_CLASS}
+                    disabled={readOnly}
+                  />
 
-        <div className="lg:sticky lg:top-4 lg:self-start">
-          <ValuationSummary
-            result={previewQuery.data ?? valuation.computed ?? undefined}
-            isLoading={previewQuery.isLoading}
-          />
+                  <OptionSelect
+                    control={control}
+                    name="titleDeed.ownershipType"
+                    label="Type of ownership"
+                    group="ownershipType"
+                    options={options}
+                    disabled={readOnly}
+                  />
+
+                  <OptionSelect
+                    control={control}
+                    name="titleDeed.sharesDivided"
+                    label="Are shares divided, then proportion"
+                    group="sharesDivided"
+                    options={options}
+                    disabled={readOnly}
+                  />
+
+                  <OptionSelect
+                    control={control}
+                    name="assetsSoldAsPerDeed"
+                    label="Assets sold as per title deed"
+                    group="assetsSoldAsPerDeed"
+                    options={options}
+                    disabled={readOnly}
+                  />
+
+                  <FormTextArea
+                    control={control}
+                    name="titleDeed.addressAsPerDeed"
+                    label="Address of property mentioned in the deed"
+                    labelClassName={FIELD_LABEL_CLASS}
+                    containerClassName="sm:col-span-2"
+                    rows={2}
+                    disabled={readOnly}
+                  />
+
+                  {TITLE_DEED_TEXT_FIELDS.map((field) => (
+                    <FormInput
+                      key={field.key}
+                      control={control}
+                      name={`titleDeed.${field.key}`}
+                      label={field.label}
+                      labelClassName={FIELD_LABEL_CLASS}
+                      disabled={readOnly}
+                    />
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Freehold / Leasehold</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <OptionSelect
+                    control={control}
+                    name="tenure"
+                    label="Leasehold / Freehold"
+                    group="tenure"
+                    options={options}
+                    disabled={readOnly}
+                  />
+
+                  {/* The sheet strikes these through for a freehold property, so
+                      they are hidden here rather than shown as N.A. */}
+                  {isLeasehold ? (
+                    <SectionFields
+                      control={control}
+                      section="leaseDetails"
+                      fields={LEASE_FIELDS}
+                      options={options}
+                      disabled={readOnly}
+                    />
+                  ) : null}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ---------------- Address & Boundaries ---------------- */}
+            <TabsContent value="address" className="mt-4 flex flex-col gap-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Address as per Site Visit</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <SectionFields
+                    control={control}
+                    section="siteAddress"
+                    fields={SITE_ADDRESS_FIELDS}
+                    options={options}
+                    disabled={readOnly}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+                  <CardTitle className="text-base">Boundaries &amp; Dimensions</CardTitle>
+                  {/* Both columns are captured in the same unit, as the sheet
+                      does — the area below converts to Sq.m either way. */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Dimensions in</span>
+                    <FormDropdown
+                      control={control}
+                      name="dimensionUnit"
+                      options={DIMENSION_UNITS}
+                      allowClear={false}
+                      disabled={readOnly}
+                      className="gap-0"
+                      triggerClassName="h-8 w-[110px]"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3">
+                  <div
+                    className={`grid ${BOUNDARY_GRID} gap-3 text-xs font-medium text-muted-foreground`}
+                  >
+                    <span>Direction</span>
+                    <span>As per documents</span>
+                    <span>As per site</span>
+                    <span>Dim. docs ({dimensionUnit})</span>
+                    <span>Dim. site ({dimensionUnit})</span>
+                  </div>
+
+                  {DIRECTIONS.map((direction) => (
+                    <div
+                      key={direction}
+                      className={`grid ${BOUNDARY_GRID} items-center gap-3`}
+                    >
+                      <span className="text-sm capitalize">{direction}</span>
+                      <FormInput
+                        control={control}
+                        name={`boundaries.${direction}.asPerDocs`}
+                        className="pb-0"
+                        disabled={readOnly}
+                        onValueChange={(_next, raw) =>
+                          mirrorDocsToSite("boundaries", direction, raw)
+                        }
+                      />
+                      <FormInput
+                        control={control}
+                        name={`boundaries.${direction}.asPerSite`}
+                        className="pb-0"
+                        disabled={readOnly}
+                      />
+                      <FormInput
+                        control={control}
+                        name={`dimensions.${direction}.asPerDocs`}
+                        className="pb-0"
+                        placeholder={dimensionUnit === "ft" ? "e.g. 30" : "e.g. 9.14"}
+                        disabled={readOnly}
+                        onValueChange={(_next, raw) =>
+                          mirrorDocsToSite("dimensions", direction, raw)
+                        }
+                      />
+                      <FormInput
+                        control={control}
+                        name={`dimensions.${direction}.asPerSite`}
+                        className="pb-0"
+                        placeholder={dimensionUnit === "ft" ? "e.g. 30" : "e.g. 9.14"}
+                        disabled={readOnly}
+                      />
+                    </div>
+                  ))}
+
+                  <p className="text-xs text-muted-foreground">
+                    The site columns copy the document columns as you type. Edit a
+                    site value directly when the visit found something different —
+                    it then stops following the deed.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <AreaOfSite control={control} disabled={readOnly} />
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Discrepancy Check</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <SectionFields
+                    control={control}
+                    section="discrepancy"
+                    fields={DISCREPANCY_FIELDS}
+                    options={options}
+                    disabled={readOnly}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ---------------- Rates & Building ---------------- */}
+            <TabsContent value="rates" className="mt-4 flex flex-col gap-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Land Rates</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <FormInput
+                    control={control}
+                    name="prevailingMarketRate"
+                    label="Prevailing market rate (₹/Sq.m)"
+                    labelClassName={FIELD_LABEL_CLASS}
+                    type="number"
+                    disabled={readOnly}
+                  />
+                  <FormInput
+                    control={control}
+                    name="circleRate"
+                    label="Guideline / circle rate (₹/Sq.m)"
+                    labelClassName={FIELD_LABEL_CLASS}
+                    type="number"
+                    disabled={readOnly}
+                  />
+                  <FormInput
+                    control={control}
+                    name="adoptedRate"
+                    label="Unit rate adopted (₹/Sq.m)"
+                    labelClassName={FIELD_LABEL_CLASS}
+                    type="number"
+                    disabled={readOnly}
+                  />
+                  <OptionSelect
+                    control={control}
+                    name="plotPosition"
+                    label="Corner plot or intermittent plot?"
+                    description="Corner and park-facing plots attract a circle-rate uplift."
+                    group="plotPosition"
+                    options={options}
+                    disabled={readOnly}
+                  />
+                  <FormInput
+                    control={control}
+                    name="superAreaPercent"
+                    label="Extra for super area component (%)"
+                    labelClassName={FIELD_LABEL_CLASS}
+                    type="number"
+                    step="0.01"
+                    disabled={readOnly}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Building Component</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormInput
+                      control={control}
+                      name="yearOfConstruction"
+                      label="Year of construction"
+                      labelClassName={FIELD_LABEL_CLASS}
+                      hint="Default for all floors; override per floor below."
+                      type="number"
+                      disabled={readOnly}
+                      onValueChange={(_next, raw) =>
+                        cascadeBuildingDefault(
+                          "yearOfConstruction",
+                          yearOfConstruction,
+                          raw,
+                        )
+                      }
+                    />
+                    <FormInput
+                      control={control}
+                      name="expectedLifeYears"
+                      label="Total estimated life (years)"
+                      labelClassName={FIELD_LABEL_CLASS}
+                      hint="Default for all floors; override per floor below."
+                      type="number"
+                      disabled={readOnly}
+                      onValueChange={(_next, raw) =>
+                        cascadeBuildingDefault(
+                          "expectedLifeYears",
+                          expectedLifeYears,
+                          raw,
+                        )
+                      }
+                    />
+                    <OptionSelect
+                      control={control}
+                      name="buildingSpecs.totalFloors"
+                      label="Total no. of floors"
+                      group="totalFloors"
+                      options={options}
+                      disabled={readOnly}
+                    />
+                    <OptionSelect
+                      control={control}
+                      name="buildingSpecs.coveredAreaConsideration"
+                      label="Covered area under consideration"
+                      group="coveredAreaConsideration"
+                      options={options}
+                      disabled={readOnly}
+                    />
+                  </div>
+                  <FloorsEditor
+                    control={control}
+                    disabled={readOnly || isPlot}
+                    buildingYear={Number(yearOfConstruction) || 0}
+                    buildingLife={Number(expectedLifeYears) || 80}
+                    reportYear={Number(reportYear) || new Date().getFullYear()}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Building Specifications</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <SectionFields
+                    control={control}
+                    section="buildingSpecs"
+                    fields={BUILDING_SPEC_FIELDS}
+                    options={options}
+                    disabled={readOnly}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ---------------- Floor Specifications ---------------- */}
+            <TabsContent value="specs" className="mt-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">
+                    Specifications &amp; Covered Area Rates — per floor
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <FloorSpecsEditor
+                    control={control}
+                    options={options}
+                    disabled={readOnly || isPlot}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ---------------- General ---------------- */}
+            <TabsContent value="general" className="mt-4 flex flex-col gap-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">
+                    Approval, Occupancy &amp; Locational Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <SectionFields
+                    control={control}
+                    section="generalDetails"
+                    fields={GENERAL_FIELDS}
+                    options={options}
+                    disabled={readOnly}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Engineer Notes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <FormTextArea
+                    control={control}
+                    name="engineerNotes"
+                    rows={4}
+                    disabled={readOnly}
+                  />
+                </CardContent>
+              </Card>
+
+              {valuation.status === "SUBMITTED" ? (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Checker Review</CardTitle>
+                  </CardHeader>
+                  {/* Its own provider: the review note is a separate form from
+                      the valuation being edited around it. */}
+                  <CardContent className="flex flex-col gap-3">
+                    <Form {...reviewForm}>
+                      <FormTextArea
+                        control={reviewForm.control}
+                        name="notes"
+                        rows={3}
+                        placeholder="Review notes"
+                      />
+                    </Form>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        onClick={() =>
+                          reviewMutation.mutate({
+                            id,
+                            data: {
+                              decision: "approved",
+                              notes: reviewForm.getValues("notes"),
+                            },
+                          })
+                        }
+                        disabled={reviewMutation.isPending}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() =>
+                          reviewMutation.mutate({
+                            id,
+                            data: {
+                              decision: "rejected",
+                              notes: reviewForm.getValues("notes"),
+                            },
+                          })
+                        }
+                        disabled={reviewMutation.isPending}
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              {valuation.checkerNotes ? (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Checker Notes</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm">{valuation.checkerNotes}</CardContent>
+                </Card>
+              ) : null}
+            </TabsContent>
+          </Tabs>
+
+          <div className="lg:sticky lg:top-4 lg:self-start">
+            <ValuationSummary
+              result={previewQuery.data ?? valuation.computed ?? undefined}
+              isLoading={previewQuery.isLoading}
+            />
+          </div>
         </div>
-      </div>
-    </div>
+      </form>
+    </Form>
   );
 }

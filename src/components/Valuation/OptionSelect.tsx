@@ -1,68 +1,56 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import FormDropdown from "@/components/Form/FormDropdown";
 import type { ValuationOptions } from "@/types";
+import type { Control, FieldValues, Path } from "react-hook-form";
 
 /**
- * A dropdown backed by one of the workbook's option groups.
+ * A react-hook-form field backed by one of the workbook's option groups.
  *
  * Groups are extracted from the master workbook's data validations, so the
  * choices offered here are exactly the ones the sheet offers — see
  * `scripts/extract-validations.ts` in the backend.
  */
-export function OptionSelect({
+export function OptionSelect<TFieldValues extends FieldValues = FieldValues>({
+  control,
+  name,
   group,
   options,
-  value,
-  onChange,
+  label,
+  description,
   disabled,
+  className,
   placeholder = "Select…",
   allowEmpty = true,
+  parseValue,
+  formatValue,
 }: {
+  control: Control<TFieldValues>;
+  name: Path<TFieldValues>;
   group: string;
   options?: ValuationOptions;
-  value?: string;
-  onChange: (value: string) => void;
+  label?: string;
+  description?: string;
   disabled?: boolean;
+  className?: string;
   placeholder?: string;
   allowEmpty?: boolean;
+  parseValue?: (value: string) => unknown;
+  formatValue?: (value: unknown) => string;
 }) {
   const choices = options?.[group] ?? [];
 
-  // Radix Select cannot hold an empty string as an item value, so a sentinel
-  // stands in for "not set" and is translated back on the way out.
-  const CLEAR = "__clear__";
-
   return (
-    <Select
-      value={value || undefined}
+    <FormDropdown
+      control={control}
+      name={name}
+      label={label}
+      description={description}
       disabled={disabled}
-      onValueChange={(next) => onChange(next === CLEAR ? "" : next)}
-    >
-      <SelectTrigger className="w-full">
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        {allowEmpty && value ? (
-          <SelectItem value={CLEAR} className="text-muted-foreground">
-            Clear
-          </SelectItem>
-        ) : null}
-        {choices.map((choice) => (
-          <SelectItem key={choice} value={choice}>
-            {choice}
-          </SelectItem>
-        ))}
-        {/* A saved value that has since been removed from the book must still
-            render, or editing an old report would silently drop it. */}
-        {value && !choices.includes(value) ? (
-          <SelectItem value={value}>{value}</SelectItem>
-        ) : null}
-      </SelectContent>
-    </Select>
+      className={className}
+      placeholder={placeholder}
+      allowClear={allowEmpty}
+      parseValue={parseValue}
+      formatValue={formatValue}
+      options={choices.map((choice) => ({ label: choice, value: choice }))}
+    />
   );
 }

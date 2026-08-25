@@ -157,3 +157,51 @@ export interface ListValuationsQuery {
 
 /** group -> allowed values, sourced from the workbook's dropdown lists. */
 export type ValuationOptions = Record<string, string[]>;
+
+/** A patchable, loosely-typed section of the form (title deed, lease, etc). */
+export type ValuationFormSection = Record<string, unknown>;
+
+export type Direction = "north" | "south" | "east" | "west";
+
+/** One side of the plot, as recorded on the deed and as measured on site. */
+export interface DirectionalMeasurement {
+  asPerDocs?: string;
+  asPerSite?: string;
+}
+
+/** Boundaries and dimensions are both captured per direction. */
+export type DirectionalSection = Record<Direction, DirectionalMeasurement>;
+
+/**
+ * The ValuationEditor's react-hook-form values. Numeric fields stay strings
+ * while editing, matching the workbook's own text-entry cells — they're
+ * coerced to numbers only when building the API payload.
+ */
+export interface ValuationFormValues {
+  method: ValuationMethod;
+  propertyType: string;
+  reportYear: string;
+  dimensionUnit: "ft" | "m";
+  areaAsPerDeed: string;
+  areaAsPerSite: string;
+  advanceReceived: string;
+  assetsSoldAsPerDeed: string;
+  tenure: string;
+  prevailingMarketRate: string;
+  circleRate: string;
+  adoptedRate: string;
+  plotPosition: string;
+  superAreaPercent: string;
+  yearOfConstruction: string;
+  expectedLifeYears: string;
+  floors: FloorInput[];
+  titleDeed: ValuationFormSection;
+  leaseDetails: ValuationFormSection;
+  siteAddress: ValuationFormSection;
+  discrepancy: ValuationFormSection;
+  boundaries: DirectionalSection;
+  dimensions: DirectionalSection;
+  buildingSpecs: ValuationFormSection;
+  generalDetails: ValuationFormSection;
+  engineerNotes: string;
+}

@@ -1,6 +1,11 @@
+import FormInput from "@/components/Form/FormInput";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import type {
+  DirectionalSection,
+  ValuationFormValues,
+} from "@/types";
+import { type Control, useFormContext, useWatch } from "react-hook-form";
+import { Field, FIELD_LABEL_CLASS } from "./SectionFields";
 
 /** Sq.ft -> Sq.m divisor used throughout the workbook (M-Doc!C100). */
 const SQFT_PER_SQM = 10.765;
@@ -12,6 +17,19 @@ export interface SideValues {
   south?: string;
   east?: string;
   west?: string;
+}
+
+/** Pulls one column (docs or site) out of the per-direction dimensions blob. */
+function sidesFor(
+  dimensions: DirectionalSection | undefined,
+  column: "asPerDocs" | "asPerSite",
+): SideValues {
+  return {
+    north: String(dimensions?.north?.[column] ?? ""),
+    south: String(dimensions?.south?.[column] ?? ""),
+    east: String(dimensions?.east?.[column] ?? ""),
+    west: String(dimensions?.west?.[column] ?? ""),
+  };
 }
 
 /** Excel ROUND: half away from zero, unlike JS Math.round on negatives. */
@@ -45,11 +63,6 @@ export function areaFromSides(
   return excelRound(area, 2);
 }
 
-export interface AreaOfSiteValue {
-  asPerDeed: string;
-  asPerSite: string;
-}
-
 /**
  * The three areas the valuation turns on. The site area mirrors the deed until
  * it is edited; when the two disagree the smaller governs, because valuing land
@@ -81,35 +94,37 @@ const numberOrNull = (value: string): number | null => {
 };
 
 export function AreaOfSite({
-  value,
-  onChange,
-  dimensionUnit,
-  docsSides,
-  siteSides,
+  control,
   disabled,
 }: {
-  value: AreaOfSiteValue;
-  onChange: (next: AreaOfSiteValue) => void;
-  dimensionUnit: DimensionUnit;
-  docsSides?: SideValues;
-  siteSides?: SideValues;
+  control: Control<ValuationFormValues>;
   disabled?: boolean;
 }) {
-  const areaFromDocs = areaFromSides(docsSides, dimensionUnit);
-  const areaFromSite = areaFromSides(siteSides, dimensionUnit);
+  const { setValue } = useFormContext<ValuationFormValues>();
 
-  const deed = numberOrNull(value.asPerDeed);
-  const site = numberOrNull(value.asPerSite);
-  const consideration = resolveConsideration(deed, site);
+  const dimensionUnit = useWatch({ control, name: "dimensionUnit" });
+  const dimensions = useWatch({ control, name: "dimensions" });
+  const asPerDeed = useWatch({ control, name: "areaAsPerDeed" });
+  const asPerSite = useWatch({ control, name: "areaAsPerSite" });
+
+  const unit: DimensionUnit = dimensionUnit ?? "ft";
+  const areaFromDocs = areaFromSides(sidesFor(dimensions, "asPerDocs"), unit);
+  const areaFromSite = areaFromSides(sidesFor(dimensions, "asPerSite"), unit);
+
+  const consideration = resolveConsideration(
+    numberOrNull(asPerDeed ?? ""),
+    numberOrNull(asPerSite ?? ""),
+  );
 
   // Typing a deed area carries it across to the site until the site is edited
   // on its own, which is how the sheet seeds C104 from C103.
-  const setDeed = (next: string) => {
-    const mirrored = value.asPerSite === value.asPerDeed || value.asPerSite === "";
-    onChange({
-      asPerDeed: next,
-      asPerSite: mirrored ? next : value.asPerSite,
-    });
+  // `asPerDeed`/`asPerSite` are this render's values, i.e. the ones from
+  // before the keystroke — which is exactly what decides whether the site
+  // column was still following the deed.
+  const mirrorToSite = (_next: unknown, raw: string) => {
+    if (asPerSite === "" || asPerSite === asPerDeed) {
+      setValue("areaAsPerSite", raw, { shouldDirty: true });
+    }
   };
 
   return (
@@ -119,54 +134,41 @@ export function AreaOfSite({
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-muted-foreground">
-              Area as per dimensions (documents)
-            </Label>
+          <Field label="Area as per dimensions (documents)">
             <div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm tabular-nums">
               {areaFromDocs === null ? "—" : `${areaFromDocs} Sq.m`}
             </div>
-          </div>
+          </Field>
 
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-muted-foreground">
-              Area as per dimensions (site)
-            </Label>
+          <Field label="Area as per dimensions (site)">
             <div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm tabular-nums">
               {areaFromSite === null ? "—" : `${areaFromSite} Sq.m`}
             </div>
-          </div>
+          </Field>
 
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-muted-foreground">
-              Area of property as per deed (Sq.m)
-            </Label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              value={value.asPerDeed}
-              disabled={disabled}
-              onChange={(e) => setDeed(e.target.value)}
-            />
-          </div>
+          <FormInput
+            control={control}
+            name="areaAsPerDeed"
+            label="Area of property as per deed (Sq.m)"
+            labelClassName={FIELD_LABEL_CLASS}
+            type="number"
+            step="0.01"
+            min="0"
+            disabled={disabled}
+            onValueChange={mirrorToSite}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-muted-foreground">
-              Area of property as per site (Sq.m)
-            </Label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              value={value.asPerSite}
-              disabled={disabled}
-              onChange={(e) => onChange({ ...value, asPerSite: e.target.value })}
-            />
-            <span className="text-xs text-muted-foreground">
-              Mirrors the deed until you enter a different measurement.
-            </span>
-          </div>
+          <FormInput
+            control={control}
+            name="areaAsPerSite"
+            label="Area of property as per site (Sq.m)"
+            labelClassName={FIELD_LABEL_CLASS}
+            type="number"
+            step="0.01"
+            min="0"
+            disabled={disabled}
+            hint="Mirrors the deed until you enter a different measurement."
+          />
         </div>
 
         <div className="rounded-md border bg-muted/40 p-3">

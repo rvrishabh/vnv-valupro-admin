@@ -1,6 +1,7 @@
-import { Input } from "@/components/ui/input";
+import FormInput from "@/components/Form/FormInput";
 import { Label } from "@/components/ui/label";
-import type { FloorInput, ValuationOptions } from "@/types";
+import type { ValuationFormValues, ValuationOptions } from "@/types";
+import { type Control, useWatch } from "react-hook-form";
 import { OptionSelect } from "./OptionSelect";
 
 /**
@@ -33,27 +34,29 @@ const SPEC_ROWS: { key: string; label: string; group?: string }[] = [
   { key: "heightOfFloor", label: "Height of floor (in m)" },
 ];
 
+/** Column headers and field names both key off the floor's position in the array. */
+interface ActiveFloor {
+  index: number;
+  name: string;
+}
+
 export function FloorSpecsEditor({
-  floors,
+  control,
   options,
-  onChange,
   disabled,
 }: {
-  floors: FloorInput[];
+  control: Control<ValuationFormValues>;
   options?: ValuationOptions;
-  onChange: (floors: FloorInput[]) => void;
   disabled?: boolean;
 }) {
+  const floors = useWatch({ control, name: "floors" }) ?? [];
+
   // Only floors that actually exist are specified, matching the sheet, which
   // shows "N.A." for a floor with no covered area.
-  const active = floors.filter((f) => f.coveredAreaSqM > 0);
-
-  const update = (name: string, key: string, value: string) =>
-    onChange(
-      floors.map((f) =>
-        f.name === name ? { ...f, specs: { ...(f.specs ?? {}), [key]: value } } : f,
-      ),
-    );
+  const active: ActiveFloor[] = floors
+    .map((floor, index) => ({ index, name: floor?.name ?? `Floor ${index}` , area: floor?.coveredAreaSqM ?? 0 }))
+    .filter((floor) => floor.area > 0)
+    .map(({ index, name }) => ({ index, name }));
 
   if (!active.length) {
     return (
@@ -71,7 +74,7 @@ export function FloorSpecsEditor({
       >
         <div />
         {active.map((floor) => (
-          <Label key={floor.name} className="text-xs font-semibold">
+          <Label key={floor.index} className="text-xs font-semibold">
             {floor.name}
           </Label>
         ))}
@@ -80,10 +83,10 @@ export function FloorSpecsEditor({
           <FloorSpecRow
             key={row.key}
             row={row}
+            control={control}
             floors={active}
             options={options}
             disabled={disabled}
-            onChange={update}
           />
         ))}
 
@@ -93,21 +96,15 @@ export function FloorSpecsEditor({
         </Label>
         {active.map((floor) => (
           <OptionSelect
-            key={`${floor.name}-category`}
+            key={floor.index}
+            control={control}
+            name={`floors.${floor.index}.constructionCategory`}
             group="floor.constructionCategory"
             options={options}
             disabled={disabled}
-            value={String(floor.constructionCategory ?? 1)}
             allowEmpty={false}
-            onChange={(v) =>
-              onChange(
-                floors.map((f) =>
-                  f.name === floor.name
-                    ? { ...f, constructionCategory: Number(v) === 2 ? 2 : 1 }
-                    : f,
-                ),
-              )
-            }
+            formatValue={(value) => String(value ?? 1)}
+            parseValue={(value) => (Number(value) === 2 ? 2 : 1)}
           />
         ))}
       </div>
@@ -117,40 +114,40 @@ export function FloorSpecsEditor({
 
 function FloorSpecRow({
   row,
+  control,
   floors,
   options,
   disabled,
-  onChange,
 }: {
   row: { key: string; label: string; group?: string };
-  floors: FloorInput[];
+  control: Control<ValuationFormValues>;
+  floors: ActiveFloor[];
   options?: ValuationOptions;
   disabled?: boolean;
-  onChange: (name: string, key: string, value: string) => void;
 }) {
   return (
     <>
       <Label className="self-center text-xs text-muted-foreground">{row.label}</Label>
-      {floors.map((floor) => {
-        const value = floor.specs?.[row.key] ?? "";
-        return row.group ? (
+      {floors.map((floor) =>
+        row.group ? (
           <OptionSelect
-            key={`${floor.name}-${row.key}`}
+            key={floor.index}
+            control={control}
+            name={`floors.${floor.index}.specs.${row.key}`}
             group={row.group}
             options={options}
-            value={value}
             disabled={disabled}
-            onChange={(v) => onChange(floor.name, row.key, v)}
           />
         ) : (
-          <Input
-            key={`${floor.name}-${row.key}`}
-            value={value}
+          <FormInput
+            key={floor.index}
+            control={control}
+            name={`floors.${floor.index}.specs.${row.key}`}
+            className="pb-0"
             disabled={disabled}
-            onChange={(e) => onChange(floor.name, row.key, e.target.value)}
           />
-        );
-      })}
+        ),
+      )}
     </>
   );
 }

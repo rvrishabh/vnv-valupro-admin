@@ -9,22 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { UseAuth } from "@/hooks/useAuth";
 import { ApiError } from "@/lib/axios";
+import { loginFormSchema, loginSearchSchema } from "@/schemas";
+import type { LoginFormValues } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
-
-const loginSchema = z.object({
-  email: z.email("Enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
-
-const loginSearchSchema = z.object({
-  redirect: z.string().optional(),
-});
 
 export const Route = createFileRoute("/login")({
   validateSearch: loginSearchSchema,
@@ -39,7 +29,7 @@ function LoginPage() {
   const logoutMutation = useLogoutMutation();
 
   const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(loginFormSchema),
     defaultValues: { email: "", password: "" },
   });
 

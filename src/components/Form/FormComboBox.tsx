@@ -69,6 +69,7 @@ const FormComboBox = <TFieldValues extends FieldValues = FieldValues>({
         <Popover open={isOpen} onOpenChange={setIsOpen}>
           <PopoverTrigger asChild>
             <Button
+              type="button"
               variant="outline"
               role="combobox"
               className={cn(
@@ -146,6 +147,7 @@ const FormComboBox = <TFieldValues extends FieldValues = FieldValues>({
             <PopoverTrigger asChild>
               <FormControl>
                 <Button
+                  type="button"
                   variant="outline"
                   role="combobox"
                   className={cn(
