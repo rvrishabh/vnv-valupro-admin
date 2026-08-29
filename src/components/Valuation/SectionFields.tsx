@@ -63,6 +63,7 @@ export function SectionFields<TFieldValues extends FieldValues = FieldValues>({
               control={control}
               name={name}
               label={field.label}
+              description={field.description}
               group={field.group}
               options={options}
               disabled={disabled}
@@ -78,6 +79,7 @@ export function SectionFields<TFieldValues extends FieldValues = FieldValues>({
               control={control}
               name={name}
               label={field.label}
+              description={field.description}
               group={field.group}
               options={options}
               disabled={disabled}
@@ -107,6 +109,7 @@ export function SectionFields<TFieldValues extends FieldValues = FieldValues>({
             name={name}
             label={field.label}
             labelClassName={FIELD_LABEL_CLASS}
+            hint={field.description}
             type={field.type === "number" ? "number" : "text"}
             disabled={disabled}
           />

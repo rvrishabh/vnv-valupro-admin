@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AreaOfSite } from "@/components/Valuation/AreaOfSite";
+import { CircleRateSuggestion } from "@/components/Valuation/CircleRateSuggestion";
 import { CreatableSelect } from "@/components/Valuation/CreatableSelect";
 import {
   BUILDING_SPEC_FIELDS,
@@ -220,6 +221,16 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
   const boundaries = useWatch({ control, name: "boundaries" });
   const dimensions = useWatch({ control, name: "dimensions" });
   const ownerNameValue = useWatch({ control, name: "titleDeed.ownerName" });
+  const tehsilValue = useWatch({
+    control,
+    name: "siteAddress.tehsilForCircleRates",
+  }) as string | undefined;
+  const mohallaValue = useWatch({ control, name: "siteAddress.mohalla" }) as
+    | string
+    | undefined;
+  const roadWidthMetersValue = Number(
+    useWatch({ control, name: "siteAddress.roadWidthMeters" }) ?? 0,
+  );
 
 
   if (valuationQuery.isLoading || !isReady || !valuation) {
@@ -289,6 +300,12 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
         // address block — so that is the single place the tehsil is entered.
         tehsil:
           String(data.siteAddress.tehsilForCircleRates ?? "") || undefined,
+        // Likewise the circle-rate register's own keys — kept in the site
+        // address block for editing, extracted here for the rate lookup.
+        circleRateMohalla:
+          String(data.siteAddress.mohalla ?? "") || undefined,
+        roadWidthMeters:
+          Number(data.siteAddress.roadWidthMeters) || undefined,
         dimensionUnit: data.dimensionUnit,
         areaUnit: data.areaUnit,
         // Only a Flat is entered by hand; a Shop is derived and anything else
@@ -726,14 +743,26 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
                     type="number"
                     disabled={readOnly}
                   />
-                  <FormInput
-                    control={control}
-                    name="circleRate"
-                    label="Guideline / circle rate (₹/Sq.m)"
-                    labelClassName={FIELD_LABEL_CLASS}
-                    type="number"
-                    disabled={readOnly}
-                  />
+                  <div className="flex flex-col gap-2 sm:col-span-2">
+                    <FormInput
+                      control={control}
+                      name="circleRate"
+                      label="Guideline / circle rate (₹/Sq.m)"
+                      labelClassName={FIELD_LABEL_CLASS}
+                      type="number"
+                      disabled={readOnly}
+                    />
+                    <CircleRateSuggestion
+                      tehsil={tehsilValue ?? ""}
+                      mohalla={mohallaValue ?? ""}
+                      roadWidthMeters={roadWidthMetersValue}
+                      method={method}
+                      disabled={readOnly}
+                      onUse={(rate) =>
+                        form.setValue("circleRate", String(rate), { shouldDirty: true })
+                      }
+                    />
+                  </div>
                   <FormInput
                     control={control}
                     name="adoptedRate"

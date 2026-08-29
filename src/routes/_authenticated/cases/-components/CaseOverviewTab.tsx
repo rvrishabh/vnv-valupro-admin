@@ -14,7 +14,11 @@ export function CaseOverviewTab({ record, timeline }: CaseOverviewTabProps) {
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="flex flex-col gap-4">
         <CaseDetailsCard record={record} />
-        <WorkflowActionsCard caseId={record.id} status={record.status} />
+        <WorkflowActionsCard
+          caseId={record.id}
+          status={record.status}
+          surveyCompletedAt={record.surveyCompletedAt}
+        />
         <AuditTrailCard timeline={timeline} />
       </div>
 

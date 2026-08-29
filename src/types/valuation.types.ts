@@ -107,6 +107,10 @@ export interface Valuation {
   undividedShareOfLand: string | number | null;
   documentsReceived: string | null;
   gpsCoordinates: string | null;
+  /** Local body / mohalla the circle-rate register is keyed on. */
+  circleRateMohalla: string | null;
+  /** Metres — picks the <=9m / 9-18m / >18m circle-rate band. */
+  roadWidthMeters: string | number | null;
   briefDescription: string | null;
   rooms: Record<string, unknown> | null;
   floorDetails: Record<string, unknown> | null;
@@ -171,6 +175,13 @@ export interface ListValuationsQuery {
 
 /** group -> allowed values, sourced from the workbook's dropdown lists. */
 export type ValuationOptions = Record<string, string[]>;
+
+/** GET /valuations/circle-rate-suggestion — null when nobody has entered one yet. */
+export interface CircleRateSuggestion {
+  rate: number;
+  effectiveFrom: string;
+  caseNumber: string | null;
+}
 
 /** A patchable, loosely-typed section of the form (title deed, lease, etc). */
 export type ValuationFormSection = Record<string, unknown>;

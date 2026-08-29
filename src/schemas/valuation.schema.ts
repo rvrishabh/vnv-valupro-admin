@@ -40,6 +40,8 @@ export const upsertValuationPayloadSchema = z.object({
   undividedShareOfLand: z.coerce.number().min(0).optional(),
   documentsReceived: z.string().optional(),
   gpsCoordinates: z.string().optional(),
+  circleRateMohalla: z.string().optional(),
+  roadWidthMeters: z.coerce.number().min(0).optional(),
   briefDescription: z.string().optional(),
   rooms: z.record(z.string(), z.unknown()).optional(),
   floorDetails: z.record(z.string(), z.unknown()).optional(),

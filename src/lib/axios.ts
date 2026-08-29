@@ -16,10 +16,16 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Shape of a failed response. The API's exception filter reports the detail on
+ * `error` (see http-exception.filter.ts), and class-validator sends an array
+ * with one entry per failed rule. `message` is kept as a fallback for any
+ * response that bypasses the filter, such as a proxy or gateway error.
+ */
 interface NestErrorBody {
   message?: string | string[];
   statusCode?: number;
-  error?: string;
+  error?: string | string[];
 }
 
 /**
@@ -52,9 +58,37 @@ function unwrapEnvelope<T>(body: unknown): T {
   return (isPaginated ? body : body.data) as T;
 }
 
+/**
+ * A request made with `responseType: "blob"` — the PDF download — receives its
+ * error body as a Blob rather than parsed JSON, so the detail has to be read
+ * out of it before the message can be found.
+ */
+async function readErrorBody(data: unknown): Promise<NestErrorBody | undefined> {
+  if (!data) return undefined;
+
+  if (data instanceof Blob) {
+    try {
+      return JSON.parse(await data.text()) as NestErrorBody;
+    } catch {
+      // A non-JSON blob carries nothing useful to show.
+      return undefined;
+    }
+  }
+
+  return data as NestErrorBody;
+}
+
+function joinDetail(detail: string | string[] | undefined): string | undefined {
+  if (!detail) return undefined;
+  if (Array.isArray(detail)) {
+    const parts = detail.filter(Boolean);
+    return parts.length ? parts.join(", ") : undefined;
+  }
+  return detail || undefined;
+}
+
 function toMessage(body: NestErrorBody | undefined, fallback: string): string {
-  if (!body?.message) return fallback;
-  return Array.isArray(body.message) ? body.message.join(", ") : body.message;
+  return joinDetail(body?.error) ?? joinDetail(body?.message) ?? fallback;
 }
 
 // The backend issues an httpOnly session cookie — there is no client-readable
@@ -104,7 +138,7 @@ api.interceptors.response.use(
       return Promise.reject(new ApiError(401, "Session expired"));
     }
 
-    const body = error.response?.data as NestErrorBody | undefined;
+    const body = await readErrorBody(error.response?.data);
     return Promise.reject(
       new ApiError(
         error.response?.status ?? 0,

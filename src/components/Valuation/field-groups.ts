@@ -22,6 +22,8 @@ export interface FieldDef {
    */
   persist?: boolean;
   type?: "text" | "number" | "textarea";
+  /** Short note shown under the field — for a unit, a caveat, or why it matters. */
+  description?: string;
   /** Cell reference in the master workbook, for traceability. */
   cell?: string;
 }
@@ -55,6 +57,20 @@ export const SITE_ADDRESS_FIELDS: FieldDef[] = [
     creatable: true,
     persist: true,
     cell: "C50",
+  },
+  {
+    key: "mohalla",
+    label: "Local body / Mohalla",
+    description: "The circle-rate register is keyed on this, not the tehsil above.",
+    group: "circleRateMohalla",
+    creatable: true,
+    persist: true,
+  },
+  {
+    key: "roadWidthMeters",
+    label: "Road width (metres)",
+    description: "Required to submit — picks the circle-rate band (<=9m / 9-18m / >18m).",
+    type: "number",
   },
 ];
 
@@ -135,20 +151,42 @@ export const DISCREPANCY_FIELDS: FieldDef[] = [
 
 /** M-Rate building specifications (rows 4-26). */
 export const BUILDING_SPEC_FIELDS: FieldDef[] = [
-  { key: "typeOfConstruction", label: "Type of Construction", group: "typeOfConstruction", cell: "C4" },
-  { key: "foundation", label: "Type of foundations", group: "foundation", cell: "C5" },
-  { key: "compoundWall", label: "Compound Wall — Height & Length", cell: "C6" },
-  { key: "quality", label: "Quality of Building Construction", group: "qualityOfConstruction", cell: "C12" },
-  { key: "stage", label: "Stage of Construction", group: "stageOfConstruction", cell: "C13" },
-  { key: "roofingTerracing", label: "Roofing / Terracing", group: "roofingTerracing", cell: "C16" },
-  { key: "waterSupply", label: "Municipal / underground water?", group: "waterSupply", cell: "C19" },
-  { key: "sewerage", label: "Sewerage?", group: "sewerage", cell: "C20" },
-  { key: "typeOfRoad", label: "Type of road", group: "typeOfRoad", cell: "C21" },
-  { key: "widthOfRoad", label: "Width of road", group: "widthOfRoad", cell: "C22" },
-  { key: "maintenance", label: "General maintenance of building", group: "maintenance", cell: "C23" },
-  { key: "exterior", label: "Exterior", group: "exterior", cell: "C24" },
-  { key: "interior", label: "Interior", group: "interior", cell: "C25" },
-  { key: "appearance", label: "Appearance of Building", group: "appearanceOfBuilding", cell: "C26" },
+  { key: "typeOfConstruction", label: "Type of Construction", group: "typeOfConstruction", creatable: true, cell: "C4" },
+  { key: "foundation", label: "Type of foundations", group: "foundation", creatable: true, cell: "C5" },
+  { key: "compoundWall", label: "Compound Wall — Height & Length", group: "compoundWall", creatable: true, cell: "C6" },
+  { key: "lifts", label: "Lifts", group: "lifts", creatable: true, cell: "C7" },
+  {
+    key: "undergroundWaterTank",
+    label: "Underground water tank",
+    group: "undergroundWaterTank",
+    creatable: true,
+    cell: "C8",
+  },
+  {
+    key: "overheadTankCapacity",
+    label: "Overhead tank — capacity",
+    group: "overheadTankCapacity",
+    creatable: true,
+    cell: "C10",
+  },
+  {
+    key: "overheadTankType",
+    label: "Overhead tank — type",
+    group: "overheadTankType",
+    creatable: true,
+    cell: "C11",
+  },
+  { key: "quality", label: "Quality of Building Construction", group: "qualityOfConstruction", creatable: true, cell: "C12" },
+  { key: "stage", label: "Stage of Construction", group: "stageOfConstruction", creatable: true, cell: "C13" },
+  { key: "roofingTerracing", label: "Roofing / Terracing", group: "roofingTerracing", creatable: true, cell: "C16" },
+  { key: "waterSupply", label: "Municipal / underground water?", group: "waterSupply", creatable: true, cell: "C19" },
+  { key: "sewerage", label: "Sewerage?", group: "sewerage", creatable: true, cell: "C20" },
+  { key: "typeOfRoad", label: "Type of road", group: "typeOfRoad", creatable: true, cell: "C21" },
+  { key: "widthOfRoad", label: "Width of road", group: "widthOfRoad", creatable: true, cell: "C22" },
+  { key: "maintenance", label: "General maintenance of building", group: "maintenance", creatable: true, cell: "C23" },
+  { key: "exterior", label: "Exterior", group: "exterior", creatable: true, cell: "C24" },
+  { key: "interior", label: "Interior", group: "interior", creatable: true, cell: "C25" },
+  { key: "appearance", label: "Appearance of Building", group: "appearanceOfBuilding", creatable: true, cell: "C26" },
 ];
 
 /** M-Gen — approval, occupancy, locational and miscellaneous details. */

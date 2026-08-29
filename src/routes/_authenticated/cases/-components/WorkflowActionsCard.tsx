@@ -16,9 +16,15 @@ import { useForm, useWatch } from "react-hook-form";
 interface WorkflowActionsCardProps {
   caseId: string;
   status: CaseStatus;
+  /** Set once the engineer has closed the visit; it cannot be closed twice. */
+  surveyCompletedAt?: string | null;
 }
 
-export function WorkflowActionsCard({ caseId, status }: WorkflowActionsCardProps) {
+export function WorkflowActionsCard({
+  caseId,
+  status,
+  surveyCompletedAt,
+}: WorkflowActionsCardProps) {
   const usersQuery = useUsersQuery({ page: 1, limit: 100 });
 
   const assign = useAssignCaseMutation();
@@ -35,7 +41,11 @@ export function WorkflowActionsCard({ caseId, status }: WorkflowActionsCardProps
 
   const canAssign = status === "PENDING" || status === "ASSIGNED";
   const canStart = status === "ASSIGNED";
-  const canComplete = status === "IN_PROGRESS";
+  // Completing the visit records a milestone rather than moving the case on,
+  // so the status alone would leave this enabled and let the same visit be
+  // closed repeatedly — each click overwriting the timestamp and adding
+  // another audit entry.
+  const canComplete = status === "IN_PROGRESS" && !surveyCompletedAt;
   const canQuery = status === "IN_PROGRESS" || status === "CHECKING";
 
   return (
@@ -98,7 +108,7 @@ export function WorkflowActionsCard({ caseId, status }: WorkflowActionsCardProps
             disabled={!canComplete || completeSurvey.isPending}
             onClick={() => completeSurvey.mutate({ id: caseId, body: { notes } })}
           >
-            Complete site visit
+            {surveyCompletedAt ? "Site visit completed" : "Complete site visit"}
           </Button>
           <Button
             type="button"
