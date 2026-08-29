@@ -108,7 +108,7 @@ const FormInput = <TFieldValues extends FieldValues = FieldValues>({
                     else field.onChange(event);
                     onValueChange?.(next, raw);
                   }}
-                  type={isPassword && showPassword ? "text" : type}
+                  type={isPassword ? (showPassword ? "text" : "password") : type}
                   placeholder={placeholder}
                   step={step}
                   min={min}

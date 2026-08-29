@@ -17,6 +17,7 @@ import { FloorSpecificationsTab } from "@/components/Valuation/FloorSpecificatio
 import { GeneralDetailsTab } from "@/components/Valuation/GeneralDetailsTab";
 import { PropertyTitleTab } from "@/components/Valuation/PropertyTitleTab";
 import { RatesBuildingTab } from "@/components/Valuation/RatesBuildingTab";
+import { SitePhotosTab } from "@/components/Valuation/SitePhotosTab";
 import { ValuationEditorHeader } from "@/components/Valuation/ValuationEditorHeader";
 import { ValuationSummary } from "@/components/Valuation/ValuationSummary";
 import {
@@ -208,11 +209,17 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
           plotPosition: data.plotPosition || "Intermittent Plot",
           superAreaPercent: (Number(data.superAreaPercent) || 0) / 100,
         },
-        building: {
-          yearOfConstruction: Number(data.yearOfConstruction) || 0,
-          expectedLifeYears: Number(data.expectedLifeYears) || 80,
-          floors: data.floors,
-        },
+        // Omitted (not sent as zeros) until a year is entered — both schemas
+        // treat `building` as an all-or-nothing section, and yearOfConstruction
+        // is required *within* it, so a zeroed placeholder fails validation
+        // instead of just deferring the section like every other draft field.
+        building: data.yearOfConstruction
+          ? {
+              yearOfConstruction: Number(data.yearOfConstruction),
+              expectedLifeYears: Number(data.expectedLifeYears) || 80,
+              floors: data.floors,
+            }
+          : undefined,
         titleDeed: data.titleDeed,
         siteAddress: data.siteAddress,
         discrepancy: data.discrepancy,
@@ -258,6 +265,7 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
               <TabsTrigger value="rates">Rates &amp; Building</TabsTrigger>
               <TabsTrigger value="specs">Floor Specifications</TabsTrigger>
               <TabsTrigger value="general">General Details</TabsTrigger>
+              <TabsTrigger value="photos">Site Photos</TabsTrigger>
             </TabsList>
 
             <PropertyTitleTab
@@ -333,6 +341,8 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
                 })
               }
             />
+
+            <SitePhotosTab valuationId={id} disabled={readOnly} />
           </Tabs>
 
           <div className="lg:sticky lg:top-4 lg:self-start">

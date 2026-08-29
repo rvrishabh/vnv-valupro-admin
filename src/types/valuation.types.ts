@@ -176,6 +176,18 @@ export interface ListValuationsQuery {
 /** group -> allowed values, sourced from the workbook's dropdown lists. */
 export type ValuationOptions = Record<string, string[]>;
 
+export type PhotoSection = "SITE_VISIT" | "GOOGLE_EARTH";
+
+/** GET /valuations/:id/photos — metadata only, no image bytes. */
+export interface ValuationPhotoMeta {
+  id: string;
+  section: PhotoSection;
+  sortOrder: number;
+  mimeType: string;
+  fileSize: number;
+  createdAt: string;
+}
+
 /** GET /valuations/circle-rate-suggestion — null when nobody has entered one yet. */
 export interface CircleRateSuggestion {
   rate: number;
