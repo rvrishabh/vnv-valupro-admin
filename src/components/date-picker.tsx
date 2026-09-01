@@ -1,31 +1,35 @@
 import { ChevronDownIcon, XIcon } from "lucide-react";
 import * as React from "react";
-import { type Control, type FieldValues } from "react-hook-form";
+import {
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form";
 
 import { Button } from "./ui/button";
 import { Calendar } from "./ui/calendar";
 import { FormControl, FormField, FormItem, FormLabel } from "./ui/form";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
-interface DatePickerProps {
+interface DatePickerProps<TFieldValues extends FieldValues = FieldValues> {
   label: string;
   value?: Date;
   onChange?: (date: Date | undefined) => void;
-  name: string;
-  control: Control<FieldValues>;
+  name: FieldPath<TFieldValues>;
+  control: Control<TFieldValues>;
   disabled?: boolean;
   disabledDate?: (date: Date) => boolean;
   defaultMonth?: Date;
 }
 
-export function DatePicker({
+export function DatePicker<TFieldValues extends FieldValues = FieldValues>({
   label,
   name,
   control,
   disabled = false,
   disabledDate,
   defaultMonth,
-}: DatePickerProps) {
+}: DatePickerProps<TFieldValues>) {
   const [open, setOpen] = React.useState(false);
 
   return (
