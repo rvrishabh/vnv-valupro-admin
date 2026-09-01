@@ -5,6 +5,9 @@ const ROOF_TYPES = ["RCC", "RBC", "Girder Stone", "Tin Shed", "Kachcha"] as cons
 export const floorSchema = z.object({
   name: z.string().min(1, "Floor name is required"),
   coveredAreaSqM: z.coerce.number().min(0, "Area cannot be negative"),
+  // Zod's default "strip" mode silently drops any key not listed here — this
+  // one was missing, so the value the valuer typed never left the browser.
+  actualAreaSqM: z.coerce.number().min(0, "Area cannot be negative").optional(),
   replacementRate: z.coerce.number().min(0, "Rate cannot be negative"),
   roofType: z.enum(ROOF_TYPES),
   constructionCategory: z.union([z.literal(1), z.literal(2)]).optional(),

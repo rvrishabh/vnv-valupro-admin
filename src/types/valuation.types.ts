@@ -8,10 +8,10 @@ export interface FloorInput {
    * M-Rate!E49 — the area actually valued. Mirrors the measured area until a
    * different basis (approved plan, bye laws) is recorded against the floor.
    */
-  coveredAreaSqM: number;
+  coveredAreaSqM?: number;
   /** M-Rate!D49 — the area measured on site. */
   actualAreaSqM?: number;
-  replacementRate: number;
+  replacementRate?: number;
   roofType: RoofType;
   constructionCategory?: 1 | 2;
   /** Falls back to the building-level year when not set. */

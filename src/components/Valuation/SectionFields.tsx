@@ -1,4 +1,6 @@
+import { DatePicker } from "@/components/date-picker";
 import FormInput from "@/components/Form/FormInput";
+import { FormNumberInput } from "@/components/Form/FormNumberInput";
 import { FormTextArea } from "@/components/Form/FormTextArea";
 import { Label } from "@/components/ui/label";
 import type { ValuationOptions } from "@/types";
@@ -82,6 +84,32 @@ export function SectionFields<TFieldValues extends FieldValues = FieldValues>({
               description={field.description}
               group={field.group}
               options={options}
+              disabled={disabled}
+            />
+          );
+        }
+
+        if (field.type === "money") {
+          return (
+            <FormNumberInput
+              key={field.key}
+              control={control}
+              name={name}
+              label={field.label}
+              labelClassName={FIELD_LABEL_CLASS}
+              hint={field.description}
+              disabled={disabled}
+            />
+          );
+        }
+
+        if (field.type === "date") {
+          return (
+            <DatePicker
+              key={field.key}
+              control={control}
+              name={name}
+              label={field.label}
               disabled={disabled}
             />
           );

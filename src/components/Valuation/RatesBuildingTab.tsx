@@ -1,4 +1,5 @@
 import FormInput from "@/components/Form/FormInput";
+import { FormNumberInput } from "@/components/Form/FormNumberInput";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
 import { CircleRateSuggestion } from "@/components/Valuation/CircleRateSuggestion";
@@ -50,21 +51,19 @@ export function RatesBuildingTab({
           <CardTitle className="text-base">Land Rates</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <FormInput
+          <FormNumberInput
             control={control}
             name="prevailingMarketRate"
             label="Prevailing market rate (₹/Sq.m)"
             labelClassName={FIELD_LABEL_CLASS}
-            type="number"
             disabled={disabled}
           />
           <div className="flex flex-col gap-2 sm:col-span-2">
-            <FormInput
+            <FormNumberInput
               control={control}
               name="circleRate"
               label="Guideline / circle rate (₹/Sq.m)"
               labelClassName={FIELD_LABEL_CLASS}
-              type="number"
               disabled={disabled}
             />
             <CircleRateSuggestion
@@ -76,12 +75,11 @@ export function RatesBuildingTab({
               onUse={onUseCircleRate}
             />
           </div>
-          <FormInput
+          <FormNumberInput
             control={control}
             name="adoptedRate"
             label="Unit rate adopted (₹/Sq.m)"
             labelClassName={FIELD_LABEL_CLASS}
-            type="number"
             disabled={disabled}
           />
           <OptionSelect

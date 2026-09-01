@@ -3,8 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
 import { CheckerReviewCard } from "@/components/Valuation/CheckerReviewCard";
 import {
+  APPROVAL_FIELDS,
+  DEVELOPMENT_FIELDS,
+  FACILITIES_FIELDS,
   FLOOR_DETAIL_FIELDS,
-  GENERAL_FIELDS,
+  LOCATION_FIELDS,
+  OCCUPANCY_FIELDS,
   ROOM_FIELDS,
 } from "@/components/Valuation/field-groups";
 import { SectionFields } from "@/components/Valuation/SectionFields";
@@ -37,15 +41,75 @@ export function GeneralDetailsTab({
     <TabsContent value="general" className="mt-4 flex flex-col gap-4">
       <Card>
         <CardHeader className="pb-3">
+          <CardTitle className="text-base">Approval Details</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <SectionFields
+            control={control}
+            section="generalDetails"
+            fields={APPROVAL_FIELDS}
+            options={options}
+            disabled={disabled}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Occupancy &amp; Tenancy Details</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <SectionFields
+            control={control}
+            section="generalDetails"
+            fields={OCCUPANCY_FIELDS}
+            options={options}
+            disabled={disabled}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Location Details</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <SectionFields
+            control={control}
+            section="generalDetails"
+            fields={LOCATION_FIELDS}
+            options={options}
+            disabled={disabled}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Development &amp; Factors Affecting Land Rates</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <SectionFields
+            control={control}
+            section="generalDetails"
+            fields={DEVELOPMENT_FIELDS}
+            options={options}
+            disabled={disabled}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
           <CardTitle className="text-base">
-            Approval, Occupancy &amp; Locational Details
+            Miscellaneous Facilities <span className="font-normal text-muted-foreground">(flats &amp; multi-storey)</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <SectionFields
             control={control}
             section="generalDetails"
-            fields={GENERAL_FIELDS}
+            fields={FACILITIES_FIELDS}
             options={options}
             disabled={disabled}
           />

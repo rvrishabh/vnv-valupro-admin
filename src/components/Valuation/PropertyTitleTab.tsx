@@ -1,5 +1,7 @@
+import { DatePicker } from "@/components/date-picker";
 import FormDropdown from "@/components/Form/FormDropdown";
 import FormInput from "@/components/Form/FormInput";
+import { FormNumberInput } from "@/components/Form/FormNumberInput";
 import { FormTextArea } from "@/components/Form/FormTextArea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
@@ -55,12 +57,11 @@ export function PropertyTitleTab({
             disabled={disabled}
           />
 
-          <FormInput
+          <FormNumberInput
             control={control}
             name="advanceReceived"
             label="Advance received (₹)"
             labelClassName={FIELD_LABEL_CLASS}
-            type="number"
             disabled={disabled}
           />
 
@@ -151,16 +152,43 @@ export function PropertyTitleTab({
             disabled={disabled}
           />
 
-          {TITLE_DEED_TEXT_FIELDS.map((field) => (
-            <FormInput
-              key={field.key}
-              control={control}
-              name={`titleDeed.${field.key}`}
-              label={field.label}
-              labelClassName={FIELD_LABEL_CLASS}
-              disabled={disabled}
-            />
-          ))}
+          {TITLE_DEED_TEXT_FIELDS.map((field) => {
+            if (field.key === "purchaseDate") {
+              return (
+                <DatePicker
+                  key={field.key}
+                  control={control}
+                  name={`titleDeed.${field.key}`}
+                  label={field.label}
+                  disabled={disabled}
+                />
+              );
+            }
+
+            if (field.key === "purchasePrice") {
+              return (
+                <FormNumberInput
+                  key={field.key}
+                  control={control}
+                  name={`titleDeed.${field.key}`}
+                  label={field.label}
+                  labelClassName={FIELD_LABEL_CLASS}
+                  disabled={disabled}
+                />
+              );
+            }
+
+            return (
+              <FormInput
+                key={field.key}
+                control={control}
+                name={`titleDeed.${field.key}`}
+                label={field.label}
+                labelClassName={FIELD_LABEL_CLASS}
+                disabled={disabled}
+              />
+            );
+          })}
         </CardContent>
       </Card>
 

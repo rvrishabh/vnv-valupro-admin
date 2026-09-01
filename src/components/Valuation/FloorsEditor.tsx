@@ -1,5 +1,6 @@
 import FormDropdown from "@/components/Form/FormDropdown";
 import FormInput from "@/components/Form/FormInput";
+import { FormNumberInput } from "@/components/Form/FormNumberInput";
 import { Button } from "@/components/ui/button";
 import type { FloorInput, RoofType, ValuationFormValues } from "@/types";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
@@ -30,19 +31,27 @@ const DEPRECIABLE_FRACTION = 0.9;
 
 export function emptyFloor(
   index: number,
-  defaults?: { yearOfConstruction?: number; expectedLifeYears?: number },
+  defaults?: {
+    yearOfConstruction?: number;
+    expectedLifeYears?: number;
+    // The Ground Floor's specs, so a floor added later starts identical to
+    // it rather than blank — the valuer only edits what's actually different.
+    specs?: Record<string, string>;
+    constructionCategory?: 1 | 2;
+  },
 ): FloorInput {
   return {
     name: FLOOR_NAMES[index] ?? `Floor ${index}`,
-    coveredAreaSqM: 0,
-    actualAreaSqM: 0,
-    replacementRate: 0,
+    coveredAreaSqM: undefined,
+    actualAreaSqM: undefined,
+    replacementRate: undefined,
     roofType: "RCC",
-    constructionCategory: 1,
+    constructionCategory: defaults?.constructionCategory ?? 1,
     // A new floor starts on the building's defaults, as E82 seeds from D82 in
     // the sheet; the valuer overrides it only if that floor was added later.
     yearOfConstruction: defaults?.yearOfConstruction || undefined,
     expectedLifeYears: defaults?.expectedLifeYears || undefined,
+    specs: defaults?.specs ? { ...defaults.specs } : undefined,
   };
 }
 
@@ -65,7 +74,6 @@ function derive(
   return { year, life, age, depreciationPercent, residualAge: life - age };
 }
 
-const numberOrZero = (raw: string) => (raw === "" ? 0 : Number(raw));
 const numberOrUndefined = (raw: string) => (raw === "" ? undefined : Number(raw));
 
 const COLUMNS = "grid-cols-[1.1fr_0.9fr_0.9fr_1fr_0.9fr_0.8fr_0.8fr_1.2fr_auto]";
@@ -144,7 +152,7 @@ export function FloorsEditor({
               type="number"
               step="0.01"
               min="0"
-              parseValue={numberOrZero}
+              parseValue={numberOrUndefined}
               disabled={disabled}
               onValueChange={(next) => {
                 // E49 = D49 in the sheet: the considered area follows the
@@ -165,17 +173,13 @@ export function FloorsEditor({
               type="number"
               step="0.01"
               min="0"
-              parseValue={numberOrZero}
+              parseValue={numberOrUndefined}
               disabled={disabled}
             />
-            <FormInput
+            <FormNumberInput
               control={control}
               name={`floors.${index}.replacementRate`}
               className="pb-0"
-              type="number"
-              step="1"
-              min="0"
-              parseValue={numberOrZero}
               disabled={disabled}
             />
             <FormDropdown
@@ -251,6 +255,8 @@ export function FloorsEditor({
               emptyFloor(fields.length, {
                 yearOfConstruction: buildingYear || undefined,
                 expectedLifeYears: buildingLife || undefined,
+                specs: floors[0]?.specs,
+                constructionCategory: floors[0]?.constructionCategory,
               }),
             )
           }

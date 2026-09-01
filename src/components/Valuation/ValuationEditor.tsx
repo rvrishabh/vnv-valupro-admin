@@ -217,7 +217,11 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
           ? {
               yearOfConstruction: Number(data.yearOfConstruction),
               expectedLifeYears: Number(data.expectedLifeYears) || 80,
-              floors: data.floors,
+              floors: data.floors.map((floor) => ({
+                ...floor,
+                coveredAreaSqM: Number(floor.coveredAreaSqM) || 0,
+                replacementRate: Number(floor.replacementRate) || 0,
+              })),
             }
           : undefined,
         titleDeed: data.titleDeed,

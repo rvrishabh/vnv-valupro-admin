@@ -22,6 +22,7 @@ export function OptionSelect<TFieldValues extends FieldValues = FieldValues>({
   allowEmpty = true,
   parseValue,
   formatValue,
+  onValueChange,
 }: {
   control: Control<TFieldValues>;
   name: Path<TFieldValues>;
@@ -35,6 +36,7 @@ export function OptionSelect<TFieldValues extends FieldValues = FieldValues>({
   allowEmpty?: boolean;
   parseValue?: (value: string) => unknown;
   formatValue?: (value: unknown) => string;
+  onValueChange?: (value: unknown, raw: string) => void;
 }) {
   const choices = options?.[group] ?? [];
 
@@ -50,6 +52,7 @@ export function OptionSelect<TFieldValues extends FieldValues = FieldValues>({
       allowClear={allowEmpty}
       parseValue={parseValue}
       formatValue={formatValue}
+      onValueChange={onValueChange}
       options={choices.map((choice) => ({ label: choice, value: choice }))}
     />
   );

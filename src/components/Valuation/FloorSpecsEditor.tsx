@@ -1,7 +1,7 @@
 import FormInput from "@/components/Form/FormInput";
 import { Label } from "@/components/ui/label";
 import type { ValuationFormValues, ValuationOptions } from "@/types";
-import { type Control, useWatch } from "react-hook-form";
+import { type Control, type Path, useFormContext, useWatch } from "react-hook-form";
 import { OptionSelect } from "./OptionSelect";
 
 /**
@@ -40,6 +40,8 @@ interface ActiveFloor {
   name: string;
 }
 
+type FloorValues = ValuationFormValues["floors"][number];
+
 export function FloorSpecsEditor({
   control,
   options,
@@ -50,6 +52,7 @@ export function FloorSpecsEditor({
   disabled?: boolean;
 }) {
   const floors = useWatch({ control, name: "floors" }) ?? [];
+  const { setValue } = useFormContext<ValuationFormValues>();
 
   // Only floors that actually exist are specified, matching the sheet, which
   // shows "N.A." for a floor with no covered area.
@@ -57,6 +60,30 @@ export function FloorSpecsEditor({
     .map((floor, index) => ({ index, name: floor?.name ?? `Floor ${index}` , area: floor?.coveredAreaSqM ?? 0 }))
     .filter((floor) => floor.area > 0)
     .map(({ index, name }) => ({ index, name }));
+
+  /**
+   * The Ground Floor doubles as the default for every other floor's
+   * specifications, so filling it in seeds the rest — the valuer only has to
+   * touch a floor that genuinely differs. A floor already given its own
+   * value is left alone, exactly like the building-level year/life cascade
+   * in ValuationEditor.tsx: the *previous* Ground Floor value is compared,
+   * not blindly overwritten, so a real per-floor override always sticks.
+   */
+  const cascadeFromGroundFloor = (
+    getValue: (floor: FloorValues) => unknown,
+    path: (index: number) => Path<ValuationFormValues>,
+    previousValue: unknown,
+    nextValue: unknown,
+  ) => {
+    floors.forEach((floor, index) => {
+      if (index === 0) return;
+      const current = getValue(floor);
+      const wasFollowing = current === undefined || current === previousValue;
+      if (wasFollowing) {
+        setValue(path(index), nextValue as never, { shouldDirty: true });
+      }
+    });
+  };
 
   if (!active.length) {
     return (
@@ -84,9 +111,11 @@ export function FloorSpecsEditor({
             key={row.key}
             row={row}
             control={control}
-            floors={active}
+            active={active}
+            floors={floors}
             options={options}
             disabled={disabled}
+            cascadeFromGroundFloor={cascadeFromGroundFloor}
           />
         ))}
 
@@ -105,6 +134,17 @@ export function FloorSpecsEditor({
             allowEmpty={false}
             formatValue={(value) => String(value ?? 1)}
             parseValue={(value) => (Number(value) === 2 ? 2 : 1)}
+            onValueChange={
+              floor.index === 0
+                ? (next) =>
+                    cascadeFromGroundFloor(
+                      (f) => f.constructionCategory,
+                      (i) => `floors.${i}.constructionCategory` as Path<ValuationFormValues>,
+                      floors[0]?.constructionCategory,
+                      next,
+                    )
+                : undefined
+            }
           />
         ))}
       </div>
@@ -115,39 +155,60 @@ export function FloorSpecsEditor({
 function FloorSpecRow({
   row,
   control,
+  active,
   floors,
   options,
   disabled,
+  cascadeFromGroundFloor,
 }: {
   row: { key: string; label: string; group?: string };
   control: Control<ValuationFormValues>;
-  floors: ActiveFloor[];
+  active: ActiveFloor[];
+  floors: ValuationFormValues["floors"];
   options?: ValuationOptions;
   disabled?: boolean;
+  cascadeFromGroundFloor: (
+    getValue: (floor: FloorValues) => unknown,
+    path: (index: number) => Path<ValuationFormValues>,
+    previousValue: unknown,
+    nextValue: unknown,
+  ) => void;
 }) {
+  const getSpecValue = (floor: FloorValues) => floor.specs?.[row.key];
+  const specPath = (index: number) =>
+    `floors.${index}.specs.${row.key}` as Path<ValuationFormValues>;
+
   return (
     <>
       <Label className="self-center text-xs text-muted-foreground">{row.label}</Label>
-      {floors.map((floor) =>
-        row.group ? (
+      {active.map((floor) => {
+        const onValueChange =
+          floor.index === 0
+            ? (next: unknown) =>
+                cascadeFromGroundFloor(getSpecValue, specPath, getSpecValue(floors[0]), next)
+            : undefined;
+
+        return row.group ? (
           <OptionSelect
             key={floor.index}
             control={control}
-            name={`floors.${floor.index}.specs.${row.key}`}
+            name={specPath(floor.index)}
             group={row.group}
             options={options}
             disabled={disabled}
+            onValueChange={onValueChange}
           />
         ) : (
           <FormInput
             key={floor.index}
             control={control}
-            name={`floors.${floor.index}.specs.${row.key}`}
+            name={specPath(floor.index)}
             className="pb-0"
             disabled={disabled}
+            onValueChange={onValueChange}
           />
-        ),
-      )}
+        );
+      })}
     </>
   );
 }

@@ -21,7 +21,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { IconCheck, IconChevronDown } from "@tabler/icons-react";
+import { IconCheck, IconChevronDown, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import type { Control, FieldValues, Path } from "react-hook-form";
 
@@ -102,7 +102,20 @@ const FormCreatableSelect = <TFieldValues extends FieldValues = FieldValues>({
                     )}
                   >
                     <span className="min-w-0 truncate">{value || placeholder}</span>
-                    <IconChevronDown className="ml-2 size-4 shrink-0 opacity-50" />
+                    <span className="ml-2 flex shrink-0 items-center gap-1">
+                      {value ? (
+                        <IconX
+                          role="button"
+                          aria-label="Clear"
+                          className="size-4 opacity-50 hover:opacity-100"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            commit("");
+                          }}
+                        />
+                      ) : null}
+                      <IconChevronDown className="size-4 opacity-50" />
+                    </span>
                   </Button>
                 </FormControl>
               </PopoverTrigger>

@@ -28,6 +28,9 @@ interface FormNumberInputProps<TFieldValues extends FieldValues = FieldValues> {
   error?: string;
   tooltipContent?: React.ReactNode;
   disabled?: boolean;
+  labelClassName?: string;
+  /** Small helper line under the field. */
+  hint?: string;
   // For uncontrolled usage
   value?: string | number;
   onChange?: (value: string | number) => void;
@@ -45,6 +48,8 @@ const FormNumberInput = <TFieldValues extends FieldValues = FieldValues>({
   error,
   tooltipContent,
   disabled = false,
+  labelClassName,
+  hint,
   value,
   onChange,
   max,
@@ -59,7 +64,7 @@ const FormNumberInput = <TFieldValues extends FieldValues = FieldValues>({
         render={({ field, fieldState }) => (
           <FormItem className={cn("w-full pb-4", className)}>
             {label && (
-              <FormLabel>
+              <FormLabel className={labelClassName}>
                 {label} {required && <span className="text-red-500">*</span>}
                 {tooltipContent && (
                   <TooltipHelper
@@ -117,6 +122,9 @@ const FormNumberInput = <TFieldValues extends FieldValues = FieldValues>({
                 </div>
               </LabelInputContainer>
             </FormControl>
+            {hint && (
+              <span className="text-xs text-muted-foreground">{hint}</span>
+            )}
             <FormMessage />
           </FormItem>
         )}

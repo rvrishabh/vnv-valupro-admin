@@ -1,4 +1,4 @@
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, XIcon } from "lucide-react";
 import * as React from "react";
 import { type Control, type FieldValues } from "react-hook-form";
 
@@ -50,7 +50,21 @@ export function DatePicker({
                         year: "numeric",
                       })
                     : "Select date"}
-                  <ChevronDownIcon />
+                  <span className="flex items-center gap-1">
+                    {field.value ? (
+                      <XIcon
+                        role="button"
+                        aria-label="Clear"
+                        className="size-4 opacity-50 hover:opacity-100"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          field.onChange(undefined);
+                          setOpen(false);
+                        }}
+                      />
+                    ) : null}
+                    <ChevronDownIcon />
+                  </span>
                 </Button>
               </FormControl>
             </PopoverTrigger>

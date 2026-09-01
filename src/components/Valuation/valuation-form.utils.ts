@@ -1,4 +1,5 @@
 import { emptyFloor } from "@/components/Valuation/FloorsEditor";
+import { GENERAL_FIELDS, type FieldDef } from "@/components/Valuation/field-groups";
 import { toNumber } from "@/lib/valuation-format";
 import type {
   Direction,
@@ -39,6 +40,41 @@ export const TITLE_DEED_TEXT_FIELDS = [
 ] as const;
 
 export const BOUNDARY_GRID = "grid-cols-[80px_1fr_1fr_110px_110px]";
+
+/**
+ * Fills in each field's `defaultValue` for any key the draft hasn't set yet
+ * — most are "N.A." (a safe unset state for a select field, or a cell a
+ * filled-out example of the master workbook consistently leaves at N.A.),
+ * a few are a real answer the book's example uses so consistently it's
+ * effectively the standard one (e.g. "Available" for road facilities).
+ */
+function applyFieldDefaults(
+  source: Record<string, unknown> | null | undefined,
+  fields: FieldDef[],
+): Record<string, unknown> {
+  const section = { ...(source ?? {}) };
+  for (const field of fields) {
+    if (field.defaultValue !== undefined && (section[field.key] ?? "") === "") {
+      section[field.key] = field.defaultValue;
+    }
+  }
+  return section;
+}
+
+function toDateSection(
+  source: Record<string, unknown> | null | undefined,
+  key: string,
+): Record<string, unknown> {
+  const section = { ...(source ?? {}) };
+  const raw = section[key];
+  if (typeof raw === "string" && raw) {
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) {
+      section[key] = parsed;
+    }
+  }
+  return section;
+}
 
 /** Widens the API's loose per-direction blob into the form's fixed shape. */
 function toDirectionalSection(
@@ -90,14 +126,14 @@ export function toFormState(v: Valuation): FormState {
       expectedLifeYears:
         floor.expectedLifeYears ?? v.expectedLifeYears ?? undefined,
     })),
-    titleDeed: v.titleDeed ?? {},
-    leaseDetails: v.leaseDetails ?? {},
+    titleDeed: toDateSection(v.titleDeed, "purchaseDate"),
+    leaseDetails: toDateSection(v.leaseDetails, "dateOfCommencement"),
     siteAddress: v.siteAddress ?? {},
     discrepancy: v.discrepancy ?? {},
     boundaries: toDirectionalSection(v.boundaries),
     dimensions: toDirectionalSection(v.dimensions),
     buildingSpecs: v.buildingSpecs ?? {},
-    generalDetails: v.generalDetails ?? {},
+    generalDetails: applyFieldDefaults(v.generalDetails, GENERAL_FIELDS),
     rooms: v.rooms ?? {},
     floorDetails: v.floorDetails ?? {},
     engineerNotes: v.engineerNotes ?? "",
