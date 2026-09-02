@@ -4,12 +4,13 @@ import {
 } from "@/api/mutations/valuation-photos";
 import { useValuationPhotosQuery } from "@/api/queries/valuation-photos";
 import { PdfPreviewModal } from "@/components/PdfPreviewModal";
+import ImageUploader from "@/components/Uploader/ImageUploader";
 import { PhotoThumb } from "@/components/Valuation/PhotoThumb";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
-import { IconEye, IconUpload } from "@tabler/icons-react";
-import { useRef, useState } from "react";
+import { IconEye } from "@tabler/icons-react";
+import { useState } from "react";
 
 const ACCEPTED_TYPES = "image/jpeg,image/png,image/webp";
 const MAX_SITE_VISIT_PHOTOS = 10;
@@ -33,8 +34,6 @@ export function SitePhotosTab({
   const uploadPhotos = useUploadValuationPhotosMutation();
   const previewAnnexure = usePreviewPhotoAnnexureMutation();
 
-  const siteInputRef = useRef<HTMLInputElement>(null);
-  const earthInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<{ url: string; filename: string } | null>(null);
 
   const closePreview = () => {
@@ -87,41 +86,16 @@ export function SitePhotosTab({
       </Card>
 
       <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+        <CardHeader className="pb-3">
           <CardTitle className="text-base">
             Site Visit Photos
             <span className="ml-2 text-xs font-normal text-muted-foreground">
               {sitePhotos.length} / {MAX_SITE_VISIT_PHOTOS}
             </span>
           </CardTitle>
-          {!disabled ? (
-            <>
-              <input
-                ref={siteInputRef}
-                type="file"
-                accept={ACCEPTED_TYPES}
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  handleFiles("SITE_VISIT", e.target.files);
-                  e.target.value = "";
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => siteInputRef.current?.click()}
-                disabled={uploadPhotos.isPending || sitePhotos.length >= MAX_SITE_VISIT_PHOTOS}
-              >
-                <IconUpload className="mr-1 size-4" />
-                Upload photos
-              </Button>
-            </>
-          ) : null}
         </CardHeader>
         <CardContent>
-          {sitePhotos.length ? (
+          {sitePhotos.length || !disabled ? (
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
               {sitePhotos.map((photo) => (
                 <PhotoThumb
@@ -131,6 +105,17 @@ export function SitePhotosTab({
                   disabled={disabled}
                 />
               ))}
+              {!disabled && sitePhotos.length < MAX_SITE_VISIT_PHOTOS ? (
+                <ImageUploader
+                  shape="square"
+                  multiple
+                  accept={ACCEPTED_TYPES}
+                  className="aspect-square h-auto w-full"
+                  label="Upload photos"
+                  disabled={uploadPhotos.isPending}
+                  onImageChange={(e) => handleFiles("SITE_VISIT", e.target.files)}
+                />
+              ) : null}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
@@ -142,43 +127,40 @@ export function SitePhotosTab({
       </Card>
 
       <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
+        <CardHeader className="pb-3">
           <CardTitle className="text-base">Google Earth Image</CardTitle>
-          {!disabled ? (
-            <>
-              <input
-                ref={earthInputRef}
-                type="file"
-                accept={ACCEPTED_TYPES}
-                className="hidden"
-                onChange={(e) => {
-                  handleFiles("GOOGLE_EARTH", e.target.files);
-                  e.target.value = "";
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => earthInputRef.current?.click()}
-                disabled={uploadPhotos.isPending}
-              >
-                <IconUpload className="mr-1 size-4" />
-                {earthPhoto ? "Replace image" : "Upload image"}
-              </Button>
-            </>
-          ) : null}
         </CardHeader>
         <CardContent>
           {earthPhoto ? (
-            <div className="max-w-md">
-              <PhotoThumb
-                valuationId={valuationId}
-                photo={earthPhoto}
-                disabled={disabled}
-                aspectClassName="aspect-video"
-              />
+            <div className="flex items-start gap-3">
+              <div className="max-w-md flex-1">
+                <PhotoThumb
+                  valuationId={valuationId}
+                  photo={earthPhoto}
+                  disabled={disabled}
+                  aspectClassName="aspect-video"
+                />
+              </div>
+              {!disabled ? (
+                <ImageUploader
+                  shape="square"
+                  accept={ACCEPTED_TYPES}
+                  size="sm"
+                  label="Replace"
+                  disabled={uploadPhotos.isPending}
+                  onImageChange={(e) => handleFiles("GOOGLE_EARTH", e.target.files)}
+                />
+              ) : null}
             </div>
+          ) : !disabled ? (
+            <ImageUploader
+              shape="square"
+              accept={ACCEPTED_TYPES}
+              className="aspect-video h-auto w-full max-w-md"
+              label="Upload image"
+              disabled={uploadPhotos.isPending}
+              onImageChange={(e) => handleFiles("GOOGLE_EARTH", e.target.files)}
+            />
           ) : (
             <p className="text-sm text-muted-foreground">
               No Google Earth screenshot uploaded yet — a single landscape image

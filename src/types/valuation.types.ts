@@ -178,7 +178,7 @@ export type ValuationOptions = Record<string, string[]>;
 
 export type PhotoSection = "SITE_VISIT" | "GOOGLE_EARTH";
 
-/** GET /valuations/:id/photos — metadata only, no image bytes. */
+/** GET /valuations/:id/photos — metadata plus the R2 public URL (no image bytes go through this API). */
 export interface ValuationPhotoMeta {
   id: string;
   section: PhotoSection;
@@ -186,6 +186,7 @@ export interface ValuationPhotoMeta {
   mimeType: string;
   fileSize: number;
   createdAt: string;
+  url: string;
 }
 
 /** GET /valuations/circle-rate-suggestion — null when nobody has entered one yet. */

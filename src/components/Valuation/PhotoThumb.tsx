@@ -1,17 +1,9 @@
 import { useDeleteValuationPhotoMutation } from "@/api/mutations/valuation-photos";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/axios";
 import type { ValuationPhotoMeta } from "@/types";
 import { IconTrash } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
 
-/**
- * The photo endpoint sits behind the same httpOnly-cookie auth as the rest of
- * the API, so a plain `<img src="...">` can't load it directly — cookies are
- * not attached to cross-origin subresource requests the way they are to a
- * top-level navigation. Fetching through the authenticated axios client and
- * rendering the result as a blob object URL sidesteps that entirely.
- */
+/** R2 objects are public, so the photo's own URL goes straight into <img src> — no auth-gated fetch needed. */
 export function PhotoThumb({
   valuationId,
   photo,
@@ -23,45 +15,13 @@ export function PhotoThumb({
   disabled?: boolean;
   aspectClassName?: string;
 }) {
-  const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const deletePhoto = useDeleteValuationPhotoMutation();
-
-  useEffect(() => {
-    let cancelled = false;
-    let url: string | null = null;
-
-    api
-      .get<Blob>(`/valuations/${valuationId}/photos/${photo.id}/file`, {
-        responseType: "blob",
-      })
-      .then((response) => {
-        if (cancelled) return;
-        url = URL.createObjectURL(response.data);
-        setObjectUrl(url);
-      })
-      .catch(() => undefined);
-
-    return () => {
-      cancelled = true;
-      if (url) URL.revokeObjectURL(url);
-    };
-  }, [valuationId, photo.id]);
 
   return (
     <div
       className={`group relative overflow-hidden rounded-md border bg-muted ${aspectClassName}`}
     >
-      {objectUrl ? (
-        <img
-          src={objectUrl}
-          alt=""
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-          Loading…
-        </div>
-      )}
+      <img src={photo.url} alt="" className="h-full w-full object-cover" />
       {!disabled ? (
         <Button
           type="button"
