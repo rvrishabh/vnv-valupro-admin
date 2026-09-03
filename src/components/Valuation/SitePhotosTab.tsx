@@ -9,6 +9,7 @@ import { PhotoThumb } from "@/components/Valuation/PhotoThumb";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
+import type { PhotoSection, ValuationPhotoMeta } from "@/types";
 import { IconEye } from "@tabler/icons-react";
 import { useState } from "react";
 
@@ -23,6 +24,74 @@ const MAX_SITE_VISIT_PHOTOS = 10;
  * no half-entered state to hold locally, and re-uploading on every keystroke
  * autosave would be wasteful.
  */
+/**
+ * A section that holds exactly one image — the aerial plan and the circle-rate
+ * extract. Both replace on re-upload rather than accumulating, so the card
+ * shows either the image with a "Replace" control or a single drop target.
+ */
+function SingleImageCard({
+  title,
+  photo,
+  emptyHint,
+  aspectClassName,
+  valuationId,
+  disabled,
+  isUploading,
+  onSelect,
+}: {
+  title: string;
+  photo?: ValuationPhotoMeta;
+  emptyHint: string;
+  aspectClassName: string;
+  valuationId: string;
+  disabled: boolean;
+  isUploading: boolean;
+  onSelect: (files: FileList | null) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {photo ? (
+          <div className="flex items-start gap-3">
+            <div className="max-w-md flex-1">
+              <PhotoThumb
+                valuationId={valuationId}
+                photo={photo}
+                disabled={disabled}
+                aspectClassName={aspectClassName}
+              />
+            </div>
+            {!disabled ? (
+              <ImageUploader
+                shape="square"
+                accept={ACCEPTED_TYPES}
+                size="sm"
+                label="Replace"
+                disabled={isUploading}
+                onImageChange={(e) => onSelect(e.target.files)}
+              />
+            ) : null}
+          </div>
+        ) : !disabled ? (
+          <ImageUploader
+            shape="square"
+            accept={ACCEPTED_TYPES}
+            className={`h-auto w-full max-w-md ${aspectClassName}`}
+            label="Upload image"
+            disabled={isUploading}
+            onImageChange={(e) => onSelect(e.target.files)}
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground">{emptyHint}</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function SitePhotosTab({
   valuationId,
   disabled,
@@ -46,11 +115,9 @@ export function SitePhotosTab({
     .filter((p) => p.section === "SITE_VISIT")
     .sort((a, b) => a.sortOrder - b.sortOrder);
   const earthPhoto = photos.find((p) => p.section === "GOOGLE_EARTH");
+  const circleRatePhoto = photos.find((p) => p.section === "CIRCLE_RATE");
 
-  const handleFiles = (
-    section: "SITE_VISIT" | "GOOGLE_EARTH",
-    fileList: FileList | null,
-  ) => {
+  const handleFiles = (section: PhotoSection, fileList: FileList | null) => {
     if (!fileList?.length) return;
     uploadPhotos.mutate({ valuationId, section, files: Array.from(fileList) });
   };
@@ -59,7 +126,7 @@ export function SitePhotosTab({
     <TabsContent value="photos" className="mt-4 flex flex-col gap-4">
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
-          <CardTitle className="text-base">Photograph &amp; Location Annexure</CardTitle>
+          <CardTitle className="text-base">Report Photographs</CardTitle>
           <Button
             type="button"
             variant="outline"
@@ -77,10 +144,11 @@ export function SitePhotosTab({
         </CardHeader>
         <CardContent>
           <p className="text-xs text-muted-foreground">
-            The annexure is one fixed A4 page: the site-visit photos below always
-            resolve into two rows — however many there are, and whatever mix of
-            portrait or landscape — with the Google Earth image pinned at the
-            bottom.
+            The site-visit photos and the Google Earth image share one fixed A4
+            page — always page 2 of the generated report. However many photos
+            there are, and whatever mix of portrait and landscape, they resolve
+            into justified rows with the aerial plan pinned below them. The
+            circle-rate extract is a page of its own and closes the report.
           </p>
         </CardContent>
       </Card>
@@ -126,49 +194,27 @@ export function SitePhotosTab({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Google Earth Image</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {earthPhoto ? (
-            <div className="flex items-start gap-3">
-              <div className="max-w-md flex-1">
-                <PhotoThumb
-                  valuationId={valuationId}
-                  photo={earthPhoto}
-                  disabled={disabled}
-                  aspectClassName="aspect-video"
-                />
-              </div>
-              {!disabled ? (
-                <ImageUploader
-                  shape="square"
-                  accept={ACCEPTED_TYPES}
-                  size="sm"
-                  label="Replace"
-                  disabled={uploadPhotos.isPending}
-                  onImageChange={(e) => handleFiles("GOOGLE_EARTH", e.target.files)}
-                />
-              ) : null}
-            </div>
-          ) : !disabled ? (
-            <ImageUploader
-              shape="square"
-              accept={ACCEPTED_TYPES}
-              className="aspect-video h-auto w-full max-w-md"
-              label="Upload image"
-              disabled={uploadPhotos.isPending}
-              onImageChange={(e) => handleFiles("GOOGLE_EARTH", e.target.files)}
-            />
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No Google Earth screenshot uploaded yet — a single landscape image
-              shown at the bottom of the annexure. Uploading a new one replaces it.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      <SingleImageCard
+        title="Google Earth Image"
+        photo={earthPhoto}
+        emptyHint="No Google Earth screenshot uploaded yet — a single landscape image shown at the bottom of the annexure. Uploading a new one replaces it."
+        aspectClassName="aspect-video"
+        valuationId={valuationId}
+        disabled={disabled}
+        isUploading={uploadPhotos.isPending}
+        onSelect={(files) => handleFiles("GOOGLE_EARTH", files)}
+      />
+
+      <SingleImageCard
+        title="Circle Rate Extract"
+        photo={circleRatePhoto}
+        emptyHint="No circle-rate extract uploaded yet — a photo or scan of the government rate register page, with the applicable row highlighted. It becomes the final page of the report. Uploading a new one replaces it."
+        aspectClassName="aspect-[3/4]"
+        valuationId={valuationId}
+        disabled={disabled}
+        isUploading={uploadPhotos.isPending}
+        onSelect={(files) => handleFiles("CIRCLE_RATE", files)}
+      />
 
       <PdfPreviewModal
         open={!!preview || previewAnnexure.isPending}

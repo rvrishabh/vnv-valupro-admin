@@ -275,7 +275,7 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
               <TabsTrigger value="rates">Rates &amp; Building</TabsTrigger>
               <TabsTrigger value="specs">Floor Specifications</TabsTrigger>
               <TabsTrigger value="general">General Details</TabsTrigger>
-              <TabsTrigger value="photos">Site Photos</TabsTrigger>
+              <TabsTrigger value="photos">Photos</TabsTrigger>
             </TabsList>
 
             <PropertyTitleTab

@@ -26,10 +26,13 @@ export function useUploadValuationPhotosMutation() {
       return response.data;
     },
     onSuccess: (uploaded, { valuationId, section }) => {
+      const SINGLE_IMAGE_MESSAGES: Partial<Record<PhotoSection, string>> = {
+        GOOGLE_EARTH: "Google Earth image saved",
+        CIRCLE_RATE: "Circle rate image saved",
+      };
       toast.success(
-        section === "GOOGLE_EARTH"
-          ? "Google Earth image saved"
-          : `${uploaded.length} site photo${uploaded.length === 1 ? "" : "s"} uploaded`,
+        SINGLE_IMAGE_MESSAGES[section] ??
+          `${uploaded.length} site photo${uploaded.length === 1 ? "" : "s"} uploaded`,
       );
       queryClient.invalidateQueries({
         queryKey: valuationPhotoQueryKeys.list(valuationId),

@@ -10,12 +10,17 @@ import { OptionSelect } from "./OptionSelect";
  * the same option groups the sheet uses.
  */
 const SPEC_ROWS: { key: string; label: string; group?: string }[] = [
+  // Free text in the sheet, and printed as the first row of the report's
+  // floorwise specification table ("RCC Framed").
+  { key: "superstructure", label: "Superstructure" },
   { key: "walls", label: "Walls", group: "floor.walls" },
   { key: "partitions", label: "Partitions", group: "floor.partitions" },
   { key: "doors", label: "Doors", group: "floor.doors" },
   { key: "windows", label: "Windows", group: "floor.windows" },
   { key: "flooring", label: "Flooring", group: "floor.flooring" },
+  { key: "specialFinish", label: "Special finish — marble, granite, wood panel etc." },
   { key: "finishing", label: "Finishing", group: "floor.finishing" },
+  { key: "drainage", label: "Drainage" },
   { key: "ceiling", label: "Ceiling", group: "floor.ceiling" },
   { key: "roofingTerracing", label: "Roofing / terracing", group: "floor.roofingTerracing" },
   { key: "roofType", label: "Roof Type", group: "floor.roofType" },

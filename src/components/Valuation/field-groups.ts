@@ -184,6 +184,21 @@ export const APPROVAL_FIELDS: FieldDef[] = [
   { key: "approvedColony", label: "Whether approved or unapproved colony", group: "approvedColony", creatable: true, defaultValue: "N.A.", cell: "C3" },
   { key: "buildingPlanApproved", label: "Is building plan approved", group: "buildingPlanApproved", creatable: true, defaultValue: "N.A.", cell: "C4" },
   { key: "approvingAuthority", label: "Name of approving authority", group: "approvingAuthority", creatable: true, defaultValue: "N.A.", cell: "C5" },
+  // Printed twice in the report — as clause 18's "Approval No." and again as
+  // the drawing-approval date/validity line in Annexure-01 Part B.
+  {
+    key: "buildingPlanApprovalNo",
+    label: "Approved plan no. & validity",
+    description: "As printed on the sanctioned plan, e.g. \"Approved vide Plan No. 1452/BFT/12/12-13\".",
+    defaultValue: "N.A.",
+  },
+  {
+    key: "planAuthenticityVerified",
+    label: "Genuineness / authenticity of the approved plan verified",
+    group: "buildingPlanApproved",
+    creatable: true,
+    defaultValue: "N.A.",
+  },
   {
     key: "constructionAsPerLayout",
     label: "Construction as per approved layout",
@@ -380,6 +395,28 @@ export const DEVELOPMENT_FIELDS: FieldDef[] = [
     creatable: true,
     defaultValue: "N.A.",
     cell: "C58",
+  },
+  // Clauses 21.1-21.3 of the issued report. The bank asks for these three
+  // explicitly and they have no cell in the workbook — the valuer used to type
+  // them straight into the document.
+  {
+    key: "waqfOrTrustProperty",
+    label: "Does the property belong to a Waqf / Temple Trust",
+    group: "boundariesMatching",
+    creatable: true,
+    defaultValue: "None",
+  },
+  {
+    key: "proximityToHazards",
+    label: "Near a highway, under an HT line, or adjoining a railway track or cemetery",
+    defaultValue: "None",
+  },
+  {
+    key: "landCondition",
+    label: "Is the land swampy, marshy, reclaimed or garden land",
+    group: "boundariesMatching",
+    creatable: true,
+    defaultValue: "No",
   },
 ];
 

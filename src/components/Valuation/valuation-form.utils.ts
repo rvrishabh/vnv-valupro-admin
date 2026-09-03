@@ -37,6 +37,13 @@ export const TITLE_DEED_TEXT_FIELDS = [
   { key: "purchaseDate", label: "Date of purchase as per deed" },
   { key: "purchasePrice", label: "Purchase price as per deed" },
   { key: "sellers", label: "Name of sellers as per deed" },
+  // Clause 4b/4c of the report — whoever the valuer actually deals with on
+  // site, which is often a family member rather than the registered owner.
+  { key: "contactPerson", label: "Contact person" },
+  { key: "contactPhone", label: "Contact phone no." },
+  // Read back in the report's Certificate, clause 2.
+  { key: "numberOfTitleDeeds", label: "No. of title deeds involved" },
+  { key: "relevantDocument", label: "Relevant document relied upon" },
 ] as const;
 
 export const BOUNDARY_GRID = "grid-cols-[80px_1fr_1fr_110px_110px]";

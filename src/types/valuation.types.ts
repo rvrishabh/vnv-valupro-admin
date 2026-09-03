@@ -176,7 +176,7 @@ export interface ListValuationsQuery {
 /** group -> allowed values, sourced from the workbook's dropdown lists. */
 export type ValuationOptions = Record<string, string[]>;
 
-export type PhotoSection = "SITE_VISIT" | "GOOGLE_EARTH";
+export type PhotoSection = "SITE_VISIT" | "GOOGLE_EARTH" | "CIRCLE_RATE";
 
 /** GET /valuations/:id/photos — metadata plus the R2 public URL (no image bytes go through this API). */
 export interface ValuationPhotoMeta {
