@@ -110,7 +110,9 @@ export function toFormState(v: Valuation): FormState {
     areaAsPerSite: String(toNumber(v.areaAsPerSite) ?? ""),
     advanceReceived: String(toNumber(v.advanceReceived) ?? ""),
     assetsSoldAsPerDeed: v.assetsSoldAsPerDeed ?? "",
-    tenure: v.tenure ?? "",
+    // Most valuations are Freehold; a draft that hasn't touched this yet
+    // should start there rather than blank.
+    tenure: v.tenure ?? "Freehold",
     prevailingMarketRate: String(toNumber(v.prevailingMarketRate) ?? ""),
     circleRate: String(toNumber(v.circleRate) ?? ""),
     adoptedRate: String(toNumber(v.adoptedRate) ?? ""),
