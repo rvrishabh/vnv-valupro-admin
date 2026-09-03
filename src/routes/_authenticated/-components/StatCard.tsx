@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { StatCardProps } from "@/types";
 import { Link } from "@tanstack/react-router";
 
@@ -21,7 +22,7 @@ export function StatCard({
         </CardHeader>
         <CardContent>
           <div className="font-display text-3xl font-semibold text-foreground">
-            {isLoading ? "—" : value}
+            {isLoading ? <Skeleton className="h-8 w-14" /> : value}
           </div>
         </CardContent>
       </Card>

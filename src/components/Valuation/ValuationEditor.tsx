@@ -12,6 +12,7 @@ import {
 } from "@/api/queries/valuations";
 import { Form } from "@/components/ui/form";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DetailPageSkeleton } from "@/components/DetailPageSkeleton";
 import { AddressBoundariesTab } from "@/components/Valuation/AddressBoundariesTab";
 import { FloorSpecificationsTab } from "@/components/Valuation/FloorSpecificationsTab";
 import { GeneralDetailsTab } from "@/components/Valuation/GeneralDetailsTab";
@@ -114,7 +115,12 @@ export function ValuationEditor({ valuationId: id }: { valuationId: string }) {
   );
 
   if (valuationQuery.isLoading || !isReady || !valuation) {
-    return <p className="text-sm text-muted-foreground">Loading valuation…</p>;
+    return (
+      <DetailPageSkeleton
+        gridColsClassName="lg:grid-cols-[minmax(0,1fr)_320px]"
+        tabCount={6}
+      />
+    );
   }
 
   const readOnly = valuation.status === "APPROVED";

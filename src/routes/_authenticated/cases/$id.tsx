@@ -1,6 +1,7 @@
 import { useCaseQuery, useCaseTimelineQuery } from "@/api/queries/cases";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { DetailPageSkeleton } from "@/components/DetailPageSkeleton";
 import { caseDetailSearchSchema } from "@/schemas";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CaseDetailHeader } from "./-components/CaseDetailHeader";
@@ -22,7 +23,12 @@ function CaseDetailPage() {
   const record = caseQuery.data;
 
   if (caseQuery.isLoading || !record) {
-    return <p className="text-sm text-muted-foreground">Loading case…</p>;
+    return (
+      <DetailPageSkeleton
+        gridColsClassName="lg:grid-cols-[minmax(0,1fr)_340px]"
+        tabCount={2}
+      />
+    );
   }
 
   return (

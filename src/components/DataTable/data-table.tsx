@@ -19,10 +19,11 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
-import { Building2, LoaderCircle } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { DataTablePagination } from "../DataTable/data-table-pagination";
 import { DataTableToolbar } from "../DataTable/data-table-toolbar";
+import { Skeleton } from "../ui/skeleton";
 import {
   Table,
   TableBody,
@@ -31,6 +32,9 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+
+/** Matches the real row height (`h-14`) so the table doesn't visibly resize once data lands. */
+const SKELETON_ROW_COUNT = 8;
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -131,11 +135,6 @@ export function DataTable<TData, TValue>({
     <div className={cn("w-full space-y-4", className)}>
       {toolbar && <DataTableToolbar table={table} filters={filters} />}
       <div className="relative border rounded-md">
-        {isLoading && (
-          <div className="absolute left-1/2 top-1/2">
-            <LoaderCircle className="h-auto animate-spin" />
-          </div>
-        )}
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -157,7 +156,17 @@ export function DataTable<TData, TValue>({
           </TableHeader>
 
           <TableBody>
-            {table.getRowModel().rows?.length && !isLoading ? (
+            {isLoading ? (
+              Array.from({ length: SKELETON_ROW_COUNT }).map((_, rowIndex) => (
+                <TableRow key={rowIndex} className="h-14">
+                  {columns.map((_, colIndex) => (
+                    <TableCell key={colIndex}>
+                      <Skeleton className="h-4 w-[80%]" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   className="cursor-pointer h-14 hover:bg-muted transition-colors"
@@ -181,16 +190,14 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  {!isLoading && (
-                    <div className="text-center py-8">
-                      <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Building2 className="w-12 h-12 text-blue-500" />
-                      </div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        No Results Found
-                      </h3>
+                  <div className="text-center py-8">
+                    <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Building2 className="w-12 h-12 text-blue-500" />
                     </div>
-                  )}
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                      No Results Found
+                    </h3>
+                  </div>
                 </TableCell>
               </TableRow>
             )}
