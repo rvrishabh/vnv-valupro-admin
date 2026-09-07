@@ -5,7 +5,7 @@ import { useState } from "react";
 import { BranchesTable } from "./-components/BranchesTable";
 import { BranchFormModal } from "./-components/BranchFormModal";
 
-export const Route = createFileRoute("/_authenticated/branches/")({
+export const Route = createFileRoute("/_authenticated/settings/branches/")({
   component: BranchesPage,
 });
 

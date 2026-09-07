@@ -9,7 +9,7 @@ import { ManagePermissionsModal } from "./-components/ManagePermissionsModal";
 import { RoleFormModal } from "./-components/RoleFormModal";
 import { RolesTable } from "./-components/RolesTable";
 
-export const Route = createFileRoute("/_authenticated/roles/")({
+export const Route = createFileRoute("/_authenticated/settings/roles/")({
   component: RolesPage,
 });
 

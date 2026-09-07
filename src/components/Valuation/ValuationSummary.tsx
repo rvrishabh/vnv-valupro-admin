@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatInr } from "@/lib/valuation-format";
@@ -101,10 +102,20 @@ export function ValuationSummary({
       </Card>
 
       <Card>
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">Govt. Guideline Value</CardTitle>
+          <Badge variant={result.guideline.upliftSource === "TEHSIL_OVERRIDE" ? "default" : "outline"}>
+            +{result.guideline.upliftPercent}%
+            {result.guideline.upliftSource === "TEHSIL_OVERRIDE"
+              ? " tehsil override"
+              : " plot position"}
+          </Badge>
         </CardHeader>
         <CardContent>
+          <Row
+            label="Circle rate adjusted for uplift"
+            value={`${formatInr(result.guideline.circleRateAdjusted)} / Sq.m`}
+          />
           <Row label="Land" value={formatInr(result.guideline.landValue)} />
           <Row label="Construction" value={formatInr(result.guideline.constructionValue)} />
           <Separator className="my-2" />

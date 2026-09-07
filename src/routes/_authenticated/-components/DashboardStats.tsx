@@ -35,28 +35,28 @@ export function DashboardStats() {
         value={institutionsQuery.data?.total ?? 0}
         icon={IconBuildingBank}
         isLoading={institutionsQuery.isLoading}
-        to="/institutions"
+        to="/settings/institutions"
       />
       <StatCard
         title="Institution Types"
         value={institutionTypesQuery.data?.length ?? 0}
         icon={IconBuildingSkyscraper}
         isLoading={institutionTypesQuery.isLoading}
-        to="/institution-types"
+        to="/settings/institution-types"
       />
       <StatCard
         title="Branches"
         value={branchesQuery.data?.total ?? 0}
         icon={IconBuildingSkyscraper}
         isLoading={branchesQuery.isLoading}
-        to="/branches"
+        to="/settings/branches"
       />
       <StatCard
         title="Pending Verifications"
         value={verificationQueueQuery.data?.length ?? 0}
         icon={IconShieldCheck}
         isLoading={verificationQueueQuery.isLoading}
-        to="/branches"
+        to="/settings/branches"
         accent
       />
       <StatCard
@@ -64,7 +64,7 @@ export function DashboardStats() {
         value={usersQuery.data?.total ?? 0}
         icon={IconUsers}
         isLoading={usersQuery.isLoading}
-        to="/users"
+        to="/settings/users"
       />
       <StatCard
         title="Valuation Estimates"

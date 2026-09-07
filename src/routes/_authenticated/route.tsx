@@ -6,37 +6,26 @@ import { SiteHeader } from "@/components/SideNav/SiteHeader";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { UseAuth } from "@/hooks/useAuth";
 import {
-  IconBuildingBank,
-  IconBuildingSkyscraper,
   IconCalculator,
   IconFolders,
   IconLayoutDashboard,
-  IconShieldLock,
-  IconUsers,
+  IconSettings,
 } from "@tabler/icons-react";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
+// Institutions, Institution Types, Branches, Users, Roles and Circle Rate
+// Uplift live under /settings — see routes/_authenticated/settings/route.tsx
+// for that section's own sub-nav — rather than each getting a top-level entry
+// here.
 const menuItems: NavMainItem[] = [
   { title: "Dashboard", url: "/", icon: IconLayoutDashboard },
   { title: "Cases", url: "/cases", icon: IconFolders },
-  {
-    title: "Institutions",
-    url: "/institutions",
-    icon: IconBuildingBank,
-  },
-  {
-    title: "Institution Types",
-    url: "/institution-types",
-    icon: IconBuildingSkyscraper,
-  },
-  { title: "Branches", url: "/branches", icon: IconBuildingSkyscraper },
   {
     title: "Valuation Estimates",
     url: "/valuation-estimates",
     icon: IconCalculator,
   },
-  { title: "Users", url: "/users", icon: IconUsers },
-  { title: "Roles", url: "/roles", icon: IconShieldLock },
+  { title: "Settings", url: "/settings", icon: IconSettings },
 ];
 
 export const Route = createFileRoute("/_authenticated")({

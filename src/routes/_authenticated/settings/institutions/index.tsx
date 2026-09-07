@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { InstitutionFormModal } from "./-components/InstitutionFormModal";
 import { InstitutionsTable } from "./-components/InstitutionsTable";
 
-export const Route = createFileRoute("/_authenticated/institutions/")({
+export const Route = createFileRoute("/_authenticated/settings/institutions/")({
   component: InstitutionsPage,
 });
 

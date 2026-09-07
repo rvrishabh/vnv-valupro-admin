@@ -3,6 +3,7 @@ export * from "./auth.types";
 export * from "./branch.types";
 export * from "./dashboard.types";
 export * from "./case.types";
+export * from "./circle-rate-uplift.types";
 export * from "./institution.types";
 export * from "./permission.types";
 export * from "./role.types";

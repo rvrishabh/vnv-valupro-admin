@@ -3,6 +3,7 @@ import { FormNumberInput } from "@/components/Form/FormNumberInput";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent } from "@/components/ui/tabs";
 import { CircleRateSuggestion } from "@/components/Valuation/CircleRateSuggestion";
+import { CircleRateUpliftNote } from "@/components/Valuation/CircleRateUpliftNote";
 import { BUILDING_SPEC_FIELDS } from "@/components/Valuation/field-groups";
 import { FloorsEditor } from "@/components/Valuation/FloorsEditor";
 import { OptionSelect } from "@/components/Valuation/OptionSelect";
@@ -82,15 +83,18 @@ export function RatesBuildingTab({
             labelClassName={FIELD_LABEL_CLASS}
             disabled={disabled}
           />
-          <OptionSelect
-            control={control}
-            name="plotPosition"
-            label="Corner plot or intermittent plot?"
-            description="Corner and park-facing plots attract a circle-rate uplift."
-            group="plotPosition"
-            options={options}
-            disabled={disabled}
-          />
+          <div className="flex flex-col gap-1.5">
+            <OptionSelect
+              control={control}
+              name="plotPosition"
+              label="Corner plot or intermittent plot?"
+              description="Corner and park-facing plots attract a circle-rate uplift."
+              group="plotPosition"
+              options={options}
+              disabled={disabled}
+            />
+            <CircleRateUpliftNote control={control} tehsilValue={tehsilValue} />
+          </div>
           <FormInput
             control={control}
             name="superAreaPercent"

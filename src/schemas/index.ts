@@ -1,6 +1,7 @@
 export * from "./auth.schema";
 export * from "./branch.schema";
 export * from "./case.schema";
+export * from "./circle-rate-uplift.schema";
 export * from "./institution-type.schema";
 export * from "./institution.schema";
 export * from "./role.schema";

@@ -59,6 +59,10 @@ export interface GuidelineValuation {
     depreciatedRate: number;
     value: number;
   }[];
+  /** The percentage actually applied to the circle rate, e.g. 10 for +10%. */
+  upliftPercent: number;
+  /** Whether that percentage came from a Settings > Circle Rate Uplift override for this tehsil, or the default corner/park-facing table. */
+  upliftSource: "TEHSIL_OVERRIDE" | "PLOT_POSITION";
 }
 
 export interface CoverageResult {

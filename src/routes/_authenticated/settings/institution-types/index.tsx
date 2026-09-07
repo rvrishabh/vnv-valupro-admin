@@ -8,7 +8,7 @@ import { useState } from "react";
 import { InstitutionTypeFormModal } from "./-components/InstitutionTypeFormModal";
 import { InstitutionTypesTable } from "./-components/InstitutionTypesTable";
 
-export const Route = createFileRoute("/_authenticated/institution-types/")({
+export const Route = createFileRoute("/_authenticated/settings/institution-types/")({
   component: InstitutionTypesPage,
 });
 

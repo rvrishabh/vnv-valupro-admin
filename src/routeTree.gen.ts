@@ -12,15 +12,18 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as AuthenticatedValuationEstimatesIndexRouteImport } from './routes/_authenticated/valuation-estimates/index'
-import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
-import { Route as AuthenticatedRolesIndexRouteImport } from './routes/_authenticated/roles/index'
-import { Route as AuthenticatedInstitutionsIndexRouteImport } from './routes/_authenticated/institutions/index'
-import { Route as AuthenticatedInstitutionTypesIndexRouteImport } from './routes/_authenticated/institution-types/index'
+import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedCasesIndexRouteImport } from './routes/_authenticated/cases/index'
-import { Route as AuthenticatedBranchesIndexRouteImport } from './routes/_authenticated/branches/index'
 import { Route as AuthenticatedCasesNewRouteImport } from './routes/_authenticated/cases/new'
 import { Route as AuthenticatedCasesIdRouteImport } from './routes/_authenticated/cases/$id'
+import { Route as AuthenticatedSettingsUsersIndexRouteImport } from './routes/_authenticated/settings/users/index'
+import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings/roles/index'
+import { Route as AuthenticatedSettingsInstitutionsIndexRouteImport } from './routes/_authenticated/settings/institutions/index'
+import { Route as AuthenticatedSettingsInstitutionTypesIndexRouteImport } from './routes/_authenticated/settings/institution-types/index'
+import { Route as AuthenticatedSettingsCircleRateUpliftIndexRouteImport } from './routes/_authenticated/settings/circle-rate-uplift/index'
+import { Route as AuthenticatedSettingsBranchesIndexRouteImport } from './routes/_authenticated/settings/branches/index'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -36,45 +39,29 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSettingsRouteRoute =
+  AuthenticatedSettingsRouteRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedValuationEstimatesIndexRoute =
   AuthenticatedValuationEstimatesIndexRouteImport.update({
     id: '/valuation-estimates/',
     path: '/valuation-estimates/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
-  id: '/users/',
-  path: '/users/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedRolesIndexRoute = AuthenticatedRolesIndexRouteImport.update({
-  id: '/roles/',
-  path: '/roles/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedInstitutionsIndexRoute =
-  AuthenticatedInstitutionsIndexRouteImport.update({
-    id: '/institutions/',
-    path: '/institutions/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedInstitutionTypesIndexRoute =
-  AuthenticatedInstitutionTypesIndexRouteImport.update({
-    id: '/institution-types/',
-    path: '/institution-types/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
 const AuthenticatedCasesIndexRoute = AuthenticatedCasesIndexRouteImport.update({
   id: '/cases/',
   path: '/cases/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedBranchesIndexRoute =
-  AuthenticatedBranchesIndexRouteImport.update({
-    id: '/branches/',
-    path: '/branches/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedCasesNewRoute = AuthenticatedCasesNewRouteImport.update({
   id: '/cases/new',
   path: '/cases/new',
@@ -85,89 +72,141 @@ const AuthenticatedCasesIdRoute = AuthenticatedCasesIdRouteImport.update({
   path: '/cases/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSettingsUsersIndexRoute =
+  AuthenticatedSettingsUsersIndexRouteImport.update({
+    id: '/users/',
+    path: '/users/',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedSettingsRolesIndexRoute =
+  AuthenticatedSettingsRolesIndexRouteImport.update({
+    id: '/roles/',
+    path: '/roles/',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedSettingsInstitutionsIndexRoute =
+  AuthenticatedSettingsInstitutionsIndexRouteImport.update({
+    id: '/institutions/',
+    path: '/institutions/',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedSettingsInstitutionTypesIndexRoute =
+  AuthenticatedSettingsInstitutionTypesIndexRouteImport.update({
+    id: '/institution-types/',
+    path: '/institution-types/',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedSettingsCircleRateUpliftIndexRoute =
+  AuthenticatedSettingsCircleRateUpliftIndexRouteImport.update({
+    id: '/circle-rate-uplift/',
+    path: '/circle-rate-uplift/',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedSettingsBranchesIndexRoute =
+  AuthenticatedSettingsBranchesIndexRouteImport.update({
+    id: '/branches/',
+    path: '/branches/',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
+  '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
   '/cases/$id': typeof AuthenticatedCasesIdRoute
   '/cases/new': typeof AuthenticatedCasesNewRoute
-  '/branches': typeof AuthenticatedBranchesIndexRoute
   '/cases': typeof AuthenticatedCasesIndexRoute
-  '/institution-types': typeof AuthenticatedInstitutionTypesIndexRoute
-  '/institutions': typeof AuthenticatedInstitutionsIndexRoute
-  '/roles': typeof AuthenticatedRolesIndexRoute
-  '/users': typeof AuthenticatedUsersIndexRoute
+  '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/valuation-estimates': typeof AuthenticatedValuationEstimatesIndexRoute
+  '/settings/branches': typeof AuthenticatedSettingsBranchesIndexRoute
+  '/settings/circle-rate-uplift': typeof AuthenticatedSettingsCircleRateUpliftIndexRoute
+  '/settings/institution-types': typeof AuthenticatedSettingsInstitutionTypesIndexRoute
+  '/settings/institutions': typeof AuthenticatedSettingsInstitutionsIndexRoute
+  '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
+  '/settings/users': typeof AuthenticatedSettingsUsersIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/': typeof AuthenticatedIndexRoute
   '/cases/$id': typeof AuthenticatedCasesIdRoute
   '/cases/new': typeof AuthenticatedCasesNewRoute
-  '/branches': typeof AuthenticatedBranchesIndexRoute
   '/cases': typeof AuthenticatedCasesIndexRoute
-  '/institution-types': typeof AuthenticatedInstitutionTypesIndexRoute
-  '/institutions': typeof AuthenticatedInstitutionsIndexRoute
-  '/roles': typeof AuthenticatedRolesIndexRoute
-  '/users': typeof AuthenticatedUsersIndexRoute
+  '/settings': typeof AuthenticatedSettingsIndexRoute
   '/valuation-estimates': typeof AuthenticatedValuationEstimatesIndexRoute
+  '/settings/branches': typeof AuthenticatedSettingsBranchesIndexRoute
+  '/settings/circle-rate-uplift': typeof AuthenticatedSettingsCircleRateUpliftIndexRoute
+  '/settings/institution-types': typeof AuthenticatedSettingsInstitutionTypesIndexRoute
+  '/settings/institutions': typeof AuthenticatedSettingsInstitutionsIndexRoute
+  '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
+  '/settings/users': typeof AuthenticatedSettingsUsersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/cases/$id': typeof AuthenticatedCasesIdRoute
   '/_authenticated/cases/new': typeof AuthenticatedCasesNewRoute
-  '/_authenticated/branches/': typeof AuthenticatedBranchesIndexRoute
   '/_authenticated/cases/': typeof AuthenticatedCasesIndexRoute
-  '/_authenticated/institution-types/': typeof AuthenticatedInstitutionTypesIndexRoute
-  '/_authenticated/institutions/': typeof AuthenticatedInstitutionsIndexRoute
-  '/_authenticated/roles/': typeof AuthenticatedRolesIndexRoute
-  '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/valuation-estimates/': typeof AuthenticatedValuationEstimatesIndexRoute
+  '/_authenticated/settings/branches/': typeof AuthenticatedSettingsBranchesIndexRoute
+  '/_authenticated/settings/circle-rate-uplift/': typeof AuthenticatedSettingsCircleRateUpliftIndexRoute
+  '/_authenticated/settings/institution-types/': typeof AuthenticatedSettingsInstitutionTypesIndexRoute
+  '/_authenticated/settings/institutions/': typeof AuthenticatedSettingsInstitutionsIndexRoute
+  '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
+  '/_authenticated/settings/users/': typeof AuthenticatedSettingsUsersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/login'
+    | '/settings'
     | '/'
     | '/cases/$id'
     | '/cases/new'
-    | '/branches'
     | '/cases'
-    | '/institution-types'
-    | '/institutions'
-    | '/roles'
-    | '/users'
+    | '/settings/'
     | '/valuation-estimates'
+    | '/settings/branches'
+    | '/settings/circle-rate-uplift'
+    | '/settings/institution-types'
+    | '/settings/institutions'
+    | '/settings/roles'
+    | '/settings/users'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
     | '/'
     | '/cases/$id'
     | '/cases/new'
-    | '/branches'
     | '/cases'
-    | '/institution-types'
-    | '/institutions'
-    | '/roles'
-    | '/users'
+    | '/settings'
     | '/valuation-estimates'
+    | '/settings/branches'
+    | '/settings/circle-rate-uplift'
+    | '/settings/institution-types'
+    | '/settings/institutions'
+    | '/settings/roles'
+    | '/settings/users'
   id:
     | '__root__'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/settings'
     | '/_authenticated/'
     | '/_authenticated/cases/$id'
     | '/_authenticated/cases/new'
-    | '/_authenticated/branches/'
     | '/_authenticated/cases/'
-    | '/_authenticated/institution-types/'
-    | '/_authenticated/institutions/'
-    | '/_authenticated/roles/'
-    | '/_authenticated/users/'
+    | '/_authenticated/settings/'
     | '/_authenticated/valuation-estimates/'
+    | '/_authenticated/settings/branches/'
+    | '/_authenticated/settings/circle-rate-uplift/'
+    | '/_authenticated/settings/institution-types/'
+    | '/_authenticated/settings/institutions/'
+    | '/_authenticated/settings/roles/'
+    | '/_authenticated/settings/users/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -198,6 +237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/valuation-estimates/': {
       id: '/_authenticated/valuation-estimates/'
       path: '/valuation-estimates'
@@ -205,46 +251,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedValuationEstimatesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/users/': {
-      id: '/_authenticated/users/'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof AuthenticatedUsersIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/roles/': {
-      id: '/_authenticated/roles/'
-      path: '/roles'
-      fullPath: '/roles'
-      preLoaderRoute: typeof AuthenticatedRolesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/institutions/': {
-      id: '/_authenticated/institutions/'
-      path: '/institutions'
-      fullPath: '/institutions'
-      preLoaderRoute: typeof AuthenticatedInstitutionsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/institution-types/': {
-      id: '/_authenticated/institution-types/'
-      path: '/institution-types'
-      fullPath: '/institution-types'
-      preLoaderRoute: typeof AuthenticatedInstitutionTypesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/_authenticated/settings/': {
+      id: '/_authenticated/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
     '/_authenticated/cases/': {
       id: '/_authenticated/cases/'
       path: '/cases'
       fullPath: '/cases'
       preLoaderRoute: typeof AuthenticatedCasesIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/branches/': {
-      id: '/_authenticated/branches/'
-      path: '/branches'
-      fullPath: '/branches'
-      preLoaderRoute: typeof AuthenticatedBranchesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/cases/new': {
@@ -261,33 +279,96 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCasesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings/users/': {
+      id: '/_authenticated/settings/users/'
+      path: '/users'
+      fullPath: '/settings/users'
+      preLoaderRoute: typeof AuthenticatedSettingsUsersIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/settings/roles/': {
+      id: '/_authenticated/settings/roles/'
+      path: '/roles'
+      fullPath: '/settings/roles'
+      preLoaderRoute: typeof AuthenticatedSettingsRolesIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/settings/institutions/': {
+      id: '/_authenticated/settings/institutions/'
+      path: '/institutions'
+      fullPath: '/settings/institutions'
+      preLoaderRoute: typeof AuthenticatedSettingsInstitutionsIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/settings/institution-types/': {
+      id: '/_authenticated/settings/institution-types/'
+      path: '/institution-types'
+      fullPath: '/settings/institution-types'
+      preLoaderRoute: typeof AuthenticatedSettingsInstitutionTypesIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/settings/circle-rate-uplift/': {
+      id: '/_authenticated/settings/circle-rate-uplift/'
+      path: '/circle-rate-uplift'
+      fullPath: '/settings/circle-rate-uplift'
+      preLoaderRoute: typeof AuthenticatedSettingsCircleRateUpliftIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/settings/branches/': {
+      id: '/_authenticated/settings/branches/'
+      path: '/branches'
+      fullPath: '/settings/branches'
+      preLoaderRoute: typeof AuthenticatedSettingsBranchesIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
   }
 }
 
+interface AuthenticatedSettingsRouteRouteChildren {
+  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+  AuthenticatedSettingsBranchesIndexRoute: typeof AuthenticatedSettingsBranchesIndexRoute
+  AuthenticatedSettingsCircleRateUpliftIndexRoute: typeof AuthenticatedSettingsCircleRateUpliftIndexRoute
+  AuthenticatedSettingsInstitutionTypesIndexRoute: typeof AuthenticatedSettingsInstitutionTypesIndexRoute
+  AuthenticatedSettingsInstitutionsIndexRoute: typeof AuthenticatedSettingsInstitutionsIndexRoute
+  AuthenticatedSettingsRolesIndexRoute: typeof AuthenticatedSettingsRolesIndexRoute
+  AuthenticatedSettingsUsersIndexRoute: typeof AuthenticatedSettingsUsersIndexRoute
+}
+
+const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren =
+  {
+    AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+    AuthenticatedSettingsBranchesIndexRoute:
+      AuthenticatedSettingsBranchesIndexRoute,
+    AuthenticatedSettingsCircleRateUpliftIndexRoute:
+      AuthenticatedSettingsCircleRateUpliftIndexRoute,
+    AuthenticatedSettingsInstitutionTypesIndexRoute:
+      AuthenticatedSettingsInstitutionTypesIndexRoute,
+    AuthenticatedSettingsInstitutionsIndexRoute:
+      AuthenticatedSettingsInstitutionsIndexRoute,
+    AuthenticatedSettingsRolesIndexRoute: AuthenticatedSettingsRolesIndexRoute,
+    AuthenticatedSettingsUsersIndexRoute: AuthenticatedSettingsUsersIndexRoute,
+  }
+
+const AuthenticatedSettingsRouteRouteWithChildren =
+  AuthenticatedSettingsRouteRoute._addFileChildren(
+    AuthenticatedSettingsRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCasesIdRoute: typeof AuthenticatedCasesIdRoute
   AuthenticatedCasesNewRoute: typeof AuthenticatedCasesNewRoute
-  AuthenticatedBranchesIndexRoute: typeof AuthenticatedBranchesIndexRoute
   AuthenticatedCasesIndexRoute: typeof AuthenticatedCasesIndexRoute
-  AuthenticatedInstitutionTypesIndexRoute: typeof AuthenticatedInstitutionTypesIndexRoute
-  AuthenticatedInstitutionsIndexRoute: typeof AuthenticatedInstitutionsIndexRoute
-  AuthenticatedRolesIndexRoute: typeof AuthenticatedRolesIndexRoute
-  AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
   AuthenticatedValuationEstimatesIndexRoute: typeof AuthenticatedValuationEstimatesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedCasesIdRoute: AuthenticatedCasesIdRoute,
   AuthenticatedCasesNewRoute: AuthenticatedCasesNewRoute,
-  AuthenticatedBranchesIndexRoute: AuthenticatedBranchesIndexRoute,
   AuthenticatedCasesIndexRoute: AuthenticatedCasesIndexRoute,
-  AuthenticatedInstitutionTypesIndexRoute:
-    AuthenticatedInstitutionTypesIndexRoute,
-  AuthenticatedInstitutionsIndexRoute: AuthenticatedInstitutionsIndexRoute,
-  AuthenticatedRolesIndexRoute: AuthenticatedRolesIndexRoute,
-  AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
   AuthenticatedValuationEstimatesIndexRoute:
     AuthenticatedValuationEstimatesIndexRoute,
 }

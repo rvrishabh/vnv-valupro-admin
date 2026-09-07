@@ -12,7 +12,7 @@ import { useState } from "react";
 import { UserFormModal } from "./-components/UserFormModal";
 import { UsersTable } from "./-components/UsersTable";
 
-export const Route = createFileRoute("/_authenticated/users/")({
+export const Route = createFileRoute("/_authenticated/settings/users/")({
   component: UsersPage,
 });
 
