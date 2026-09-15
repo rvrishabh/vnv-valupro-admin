@@ -1,4 +1,8 @@
-import type { caseDetailSearchSchema, createCasePayloadSchema } from "@/schemas/case.schema";
+import type {
+  caseDetailSearchSchema,
+  createCasePayloadSchema,
+  updateCasePayloadSchema,
+} from "@/schemas/case.schema";
 import type { z } from "zod";
 
 export type CaseStatus =
@@ -45,6 +49,7 @@ export interface Case {
 }
 
 export type CreateCasePayload = z.infer<typeof createCasePayloadSchema>;
+export type UpdateCasePayload = z.infer<typeof updateCasePayloadSchema>;
 export type CaseDetailSearch = z.infer<typeof caseDetailSearchSchema>;
 
 export interface ListCasesQuery {
@@ -60,6 +65,8 @@ export interface CaseParticipant {
   id: string;
   name: string;
   email: string;
+  /** Who they are on the platform — Super Admin, Admin, Bank Manager, etc. */
+  role?: { name: string } | null;
 }
 
 export interface CaseAuditEvent {
@@ -94,5 +101,6 @@ export interface CaseTimeline {
 /** The case detail page's workflow actions form (assign / notes). */
 export interface WorkflowActionsFormValues {
   engineerId: string;
+  checkerId: string;
   notes: string;
 }

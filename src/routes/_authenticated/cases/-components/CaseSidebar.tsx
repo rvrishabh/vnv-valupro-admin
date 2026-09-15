@@ -1,10 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDateTime, MILESTONE_LABELS } from "@/lib/case-format";
-import type { CaseTimeline } from "@/types";
+import { formatDateTime, formatRoleName, MILESTONE_LABELS } from "@/lib/case-format";
+import type { CaseParticipant, CaseTimeline } from "@/types";
 import { Detail } from "./Detail";
 
 interface CaseSidebarProps {
   timeline?: CaseTimeline;
+}
+
+/** "Rishabh Verma (Site Engineer)" — falls back to just the name if the role isn't known. */
+function participantLabel(person?: CaseParticipant | null): string | undefined {
+  if (!person) return undefined;
+  const role = formatRoleName(person.role?.name);
+  return role ? `${person.name} (${role})` : person.name;
 }
 
 export function CaseSidebar({ timeline }: CaseSidebarProps) {
@@ -15,12 +22,18 @@ export function CaseSidebar({ timeline }: CaseSidebarProps) {
           <CardTitle className="text-base">People</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-2 text-sm">
-          <Detail label="Created by" value={timeline?.participants?.createdBy?.name} />
+          <Detail
+            label="Created by"
+            value={participantLabel(timeline?.participants?.createdBy)}
+          />
           <Detail
             label="Site engineer"
-            value={timeline?.participants?.assignedTo?.name}
+            value={participantLabel(timeline?.participants?.assignedTo)}
           />
-          <Detail label="Checker" value={timeline?.participants?.checkedBy?.name} />
+          <Detail
+            label="Checker"
+            value={participantLabel(timeline?.participants?.checkedBy)}
+          />
         </CardContent>
       </Card>
 

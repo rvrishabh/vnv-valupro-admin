@@ -15,6 +15,7 @@ export const CASE_STATUS_VARIANT: Record<
 export const CASE_ACTION_LABELS: Record<string, string> = {
   CASE_CREATED: "Case created",
   CASE_ASSIGNED: "Assigned to site engineer",
+  CHECKER_ASSIGNED: "Assigned to checker",
   SURVEY_STARTED: "Site visit started",
   SURVEY_COMPLETED: "Site visit completed",
   REPORT_SUBMITTED: "Valuation submitted for checking",
@@ -22,6 +23,16 @@ export const CASE_ACTION_LABELS: Record<string, string> = {
   REPORT_REJECTED: "Valuation rejected",
   QUERY_RAISED: "Query raised",
 };
+
+/** "SITE_ENGINEER" -> "Site Engineer" — the role names come from the backend as-is. */
+export function formatRoleName(name: string | null | undefined): string | null {
+  if (!name) return null;
+  return name
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
 
 export const MILESTONE_LABELS: [string, string][] = [
   ["createdAt", "Case created"],

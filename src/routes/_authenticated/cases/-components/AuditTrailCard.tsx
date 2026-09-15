@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CASE_ACTION_LABELS, formatDateTime } from "@/lib/case-format";
+import { CASE_ACTION_LABELS, formatDateTime, formatRoleName } from "@/lib/case-format";
 import type { CaseTimeline } from "@/types";
 
 interface AuditTrailCardProps {
@@ -24,6 +24,9 @@ export function AuditTrailCard({ timeline }: AuditTrailCardProps) {
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {formatDateTime(event.createdAt)} · {event.actor?.name}
+                    {formatRoleName(event.actor?.role?.name)
+                      ? ` (${formatRoleName(event.actor?.role?.name)})`
+                      : ""}
                     {event.oldStatus
                       ? ` · ${event.oldStatus} → ${event.newStatus}`
                       : ` · ${event.newStatus ?? ""}`}

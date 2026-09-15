@@ -1,5 +1,6 @@
 import {
   useAssignCaseMutation,
+  useAssignCheckerMutation,
   useCompleteSurveyMutation,
   useRaiseQueryMutation,
   useStartSurveyMutation,
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import type { CaseStatus, WorkflowActionsFormValues } from "@/types";
+import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 interface WorkflowActionsCardProps {
@@ -18,28 +20,58 @@ interface WorkflowActionsCardProps {
   status: CaseStatus;
   /** Set once the engineer has closed the visit; it cannot be closed twice. */
   surveyCompletedAt?: string | null;
+  /** Who the case is currently assigned to, if anyone — pre-fills the combo box so it survives a refresh instead of resetting to blank. */
+  assignedToId?: string | null;
+  /** Who's currently the checker on record, if anyone — same pre-fill treatment. */
+  checkedById?: string | null;
 }
 
 export function WorkflowActionsCard({
   caseId,
   status,
   surveyCompletedAt,
+  assignedToId,
+  checkedById,
 }: WorkflowActionsCardProps) {
   const usersQuery = useUsersQuery({ page: 1, limit: 100 });
 
   const assign = useAssignCaseMutation();
+  const assignChecker = useAssignCheckerMutation();
   const startSurvey = useStartSurveyMutation();
   const completeSurvey = useCompleteSurveyMutation();
   const raiseQuery = useRaiseQueryMutation();
 
   const form = useForm<WorkflowActionsFormValues>({
-    defaultValues: { engineerId: "", notes: "" },
+    defaultValues: {
+      engineerId: assignedToId ?? "",
+      checkerId: checkedById ?? "",
+      notes: "",
+    },
   });
-  const { control } = form;
+  const { control, setValue } = form;
   const engineerId = useWatch({ control, name: "engineerId" });
+  const checkerId = useWatch({ control, name: "checkerId" });
   const notes = useWatch({ control, name: "notes" });
 
+  // Keeps both fields in sync with the case's actual assignment — on the
+  // initial load (so a refresh doesn't show them blank) and after a
+  // (re)assignment updates the record — without using react-hook-form's
+  // reactive `values` prop, which would also wipe out an in-progress note
+  // every time the case record refetches.
+  useEffect(() => {
+    setValue("engineerId", assignedToId ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assignedToId]);
+
+  useEffect(() => {
+    setValue("checkerId", checkedById ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkedById]);
+
+  // Reassignment is allowed at these points; a decided case has nothing left
+  // to hand off — matches the backend's own gates on these two endpoints.
   const canAssign = status === "PENDING" || status === "ASSIGNED";
+  const canAssignChecker = status !== "APPROVED" && status !== "REJECTED";
   const canStart = status === "ASSIGNED";
   // Completing the visit records a milestone rather than moving the case on,
   // so the status alone would leave this enabled and let the same visit be
@@ -47,6 +79,31 @@ export function WorkflowActionsCard({
   // another audit entry.
   const canComplete = status === "IN_PROGRESS" && !surveyCompletedAt;
   const canQuery = status === "IN_PROGRESS" || status === "CHECKING";
+
+  const users = usersQuery.data?.data ?? [];
+
+  /**
+   * The dropdown normally only offers people with the matching role, but the
+   * currently-assigned person has to stay visible even if that's no longer
+   * (or was never) true — a role change after assignment, or an assignment
+   * made outside this filter — otherwise the box goes blank even though the
+   * assignment is real, which reads as broken rather than just unusual.
+   */
+  function roleOptions(role: string, currentId?: string | null) {
+    const options = users
+      .filter((user) => user.role?.name === role)
+      .map((user) => ({ label: user.name, value: user.id }));
+
+    if (currentId && !options.some((o) => o.value === currentId)) {
+      const current = users.find((u) => u.id === currentId);
+      if (current) options.push({ label: current.name, value: current.id });
+    }
+
+    return options;
+  }
+
+  const engineerOptions = roleOptions("SITE_ENGINEER", assignedToId);
+  const checkerOptions = roleOptions("CHECKER", checkedById);
 
   return (
     <Card>
@@ -63,10 +120,7 @@ export function WorkflowActionsCard({
                 label="Assign site visit to engineer"
                 placeholder="Select engineer"
                 className="flex-1"
-                options={(usersQuery.data?.data ?? []).map((user) => ({
-                  label: `${user.name} — ${user.role?.name ?? "user"}`,
-                  value: user.id,
-                }))}
+                options={engineerOptions}
               />
               <Button
                 type="button"
@@ -75,6 +129,32 @@ export function WorkflowActionsCard({
                   assign.mutate({
                     id: caseId,
                     body: { engineerId, notes: notes || undefined },
+                  })
+                }
+              >
+                Assign
+              </Button>
+            </div>
+          ) : null}
+
+          {canAssignChecker ? (
+            <div className="flex items-end gap-2">
+              <FormComboBox
+                control={control}
+                name="checkerId"
+                label="Assign checker"
+                placeholder="Select checker"
+                className="flex-1"
+                options={checkerOptions}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!checkerId || assignChecker.isPending}
+                onClick={() =>
+                  assignChecker.mutate({
+                    id: caseId,
+                    body: { checkerId, notes: notes || undefined },
                   })
                 }
               >

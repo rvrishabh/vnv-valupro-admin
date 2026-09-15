@@ -1,23 +1,14 @@
 import { useCreateCaseMutation } from "@/api/mutations/cases";
 import { useCreateValuationMutation } from "@/api/mutations/valuations";
-import { useInstitutionsQuery } from "@/api/queries/institutions";
-import FormComboBox from "@/components/Form/FormComboBox";
-import FormInput from "@/components/Form/FormInput";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { createCasePayloadSchema } from "@/schemas";
-import type { CreateCasePayload, PropertyType } from "@/types";
+import type { CreateCasePayload } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useForm } from "react-hook-form";
-
-const PROPERTY_TYPES: PropertyType[] = [
-  "RESIDENTIAL",
-  "COMMERCIAL",
-  "LAND",
-  "INDUSTRIAL",
-];
+import { useForm, useWatch } from "react-hook-form";
+import { CaseDetailsFields } from "./CaseDetailsFields";
 
 /**
  * Opens a case and its draft valuation together, then hands off to the
@@ -26,7 +17,6 @@ const PROPERTY_TYPES: PropertyType[] = [
  */
 export function NewCaseForm() {
   const navigate = useNavigate();
-  const institutionsQuery = useInstitutionsQuery({ page: 1, limit: 100 });
   const createCase = useCreateCaseMutation();
   const createValuation = useCreateValuationMutation();
 
@@ -36,9 +26,13 @@ export function NewCaseForm() {
       customerName: "",
       customerMobile: "",
       institutionId: "",
+      branchId: "",
       propertyType: "RESIDENTIAL",
+      propertyLocation: "",
+      bankReference: "",
     },
   });
+  const institutionId = useWatch({ control: form.control, name: "institutionId" });
 
   const isBusy = createCase.isPending || createValuation.isPending;
 
@@ -47,7 +41,10 @@ export function NewCaseForm() {
       customerName: values.customerName,
       customerMobile: values.customerMobile,
       institutionId: values.institutionId,
+      branchId: values.branchId || undefined,
       propertyType: values.propertyType,
+      propertyLocation: values.propertyLocation || undefined,
+      bankReference: values.bankReference || undefined,
     });
 
     await createValuation.mutateAsync({
@@ -84,39 +81,7 @@ export function NewCaseForm() {
             <CardTitle className="text-base">Case Details</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            <FormInput
-              control={form.control}
-              name="customerName"
-              label="Customer / owner name"
-              required
-            />
-
-            <FormInput
-              control={form.control}
-              name="customerMobile"
-              label="Contact mobile"
-              required
-            />
-
-            <FormComboBox
-              control={form.control}
-              name="institutionId"
-              label="Bank"
-              placeholder="Select bank"
-              required
-              options={(institutionsQuery.data?.data ?? []).map((institution) => ({
-                label: institution.name,
-                value: institution.id,
-              }))}
-            />
-
-            <FormComboBox
-              control={form.control}
-              name="propertyType"
-              label="Property type"
-              required
-              options={PROPERTY_TYPES.map((type) => ({ label: type, value: type }))}
-            />
+            <CaseDetailsFields control={form.control} institutionId={institutionId} />
           </CardContent>
         </Card>
 

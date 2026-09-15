@@ -18,6 +18,8 @@ export function CaseOverviewTab({ record, timeline }: CaseOverviewTabProps) {
           caseId={record.id}
           status={record.status}
           surveyCompletedAt={record.surveyCompletedAt}
+          assignedToId={record.assignedTo?.id}
+          checkedById={record.checkedBy?.id}
         />
         <AuditTrailCard timeline={timeline} />
       </div>

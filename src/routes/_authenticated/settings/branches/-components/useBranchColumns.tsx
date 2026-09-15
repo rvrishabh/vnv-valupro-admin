@@ -7,7 +7,7 @@ import { DataTableColumnHeader } from "@/components/DataTable/data-table-column-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Branch } from "@/types";
-import { IconCheck, IconX } from "@tabler/icons-react";
+import { IconCheck, IconTrash, IconX } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 
@@ -56,6 +56,8 @@ function buildBaseColumns(): ColumnDef<Branch>[] {
 }
 
 export function useBranchColumns() {
+  const rejectMutation = useRejectBranchMutation();
+
   return useMemo<ColumnDef<Branch>[]>(
     () => [
       ...buildBaseColumns(),
@@ -69,8 +71,38 @@ export function useBranchColumns() {
             <Badge variant="default">Verified</Badge>
           ),
       },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <div className="flex items-center justify-end">
+            <AlertPopup
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <IconTrash className="h-4 w-4 text-destructive" />
+                </Button>
+              }
+              title="Delete branch?"
+              cancelAction="Cancel"
+              continueAction={
+                <span onClick={() => rejectMutation.mutate(row.original.id)}>
+                  Delete
+                </span>
+              }
+            >
+              This will permanently remove "{row.original.branchName}" from
+              the platform. Branches with users or cases still assigned to
+              them can't be deleted — reassign those first.
+            </AlertPopup>
+          </div>
+        ),
+      },
     ],
-    [],
+    [rejectMutation],
   );
 }
 

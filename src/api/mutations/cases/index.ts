@@ -1,8 +1,8 @@
 import { caseQueryKeys } from "@/api/queries/cases";
 import { api } from "@/lib/axios";
 import { toastApiError } from "@/lib/query-utils";
-import { createCasePayloadSchema } from "@/schemas";
-import type { Case, CreateCasePayload } from "@/types";
+import { createCasePayloadSchema, updateCasePayloadSchema } from "@/schemas";
+import type { Case, CreateCasePayload, UpdateCasePayload } from "@/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -18,6 +18,29 @@ export function useCreateCaseMutation() {
       queryClient.invalidateQueries({ queryKey: caseQueryKeys.all });
     },
     onError: (err) => toastApiError(err, "Unable to create the case"),
+  });
+}
+
+/** PATCH /cases/:id — the case's own details, not a workflow transition. */
+export function useUpdateCaseMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdateCasePayload;
+    }) => {
+      const parsed = updateCasePayloadSchema.parse(data);
+      const response = await api.patch<Case>(`/cases/${id}`, parsed);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Case details updated");
+      queryClient.invalidateQueries({ queryKey: caseQueryKeys.all });
+    },
+    onError: (err) => toastApiError(err, "Unable to update the case"),
   });
 }
 
@@ -46,6 +69,14 @@ export function useAssignCaseMutation() {
     (id) => `/cases/${id}/assign`,
     "Case assigned",
     "Unable to assign the case",
+  );
+}
+
+export function useAssignCheckerMutation() {
+  return useCaseTransition<{ checkerId: string; notes?: string }>(
+    (id) => `/cases/${id}/assign-checker`,
+    "Checker assigned",
+    "Unable to assign the checker",
   );
 }
 

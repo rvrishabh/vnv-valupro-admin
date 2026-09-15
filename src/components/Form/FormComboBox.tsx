@@ -155,6 +155,7 @@ const FormComboBox = <TFieldValues extends FieldValues = FieldValues>({
                     !field.value && "text-muted-foreground"
                   )}
                   onClick={() => setIsOpen(!isOpen)}
+                  disabled={disabled}
                 >
                   {field.value
                     ? options.find((option) => option.value === field.value)

@@ -191,6 +191,8 @@ export interface ValuationPhotoMeta {
   fileSize: number;
   createdAt: string;
   url: string;
+  /** Whether this photo is pulled into the report annexure — always true for GOOGLE_EARTH/CIRCLE_RATE; the admin curates it for SITE_VISIT. */
+  includeInReport: boolean;
 }
 
 /** GET /valuations/circle-rate-suggestion — null when nobody has entered one yet. */

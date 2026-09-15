@@ -6,4 +6,6 @@ export const branchQueryKeys = {
   list: (query: ListBranchesQuery) =>
     [...branchQueryKeys.lists(), query] as const,
   verificationQueue: () => [...branchQueryKeys.all, "verification-queue"] as const,
+  public: (institutionId: string) =>
+    [...branchQueryKeys.all, "public", institutionId] as const,
 };

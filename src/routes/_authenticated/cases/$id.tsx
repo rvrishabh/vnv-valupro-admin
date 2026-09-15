@@ -6,6 +6,7 @@ import { caseDetailSearchSchema } from "@/schemas";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CaseDetailHeader } from "./-components/CaseDetailHeader";
 import { CaseOverviewTab } from "./-components/CaseOverviewTab";
+import { CaseSiteVisitTab } from "./-components/CaseSiteVisitTab";
 import { CaseValuationTab } from "./-components/CaseValuationTab";
 
 export const Route = createFileRoute("/_authenticated/cases/$id")({
@@ -26,7 +27,7 @@ function CaseDetailPage() {
     return (
       <DetailPageSkeleton
         gridColsClassName="lg:grid-cols-[minmax(0,1fr)_340px]"
-        tabCount={2}
+        tabCount={3}
       />
     );
   }
@@ -38,11 +39,14 @@ function CaseDetailPage() {
       <Tabs
         value={tab ?? "overview"}
         onValueChange={(value) =>
-          navigate({ search: { tab: value as "overview" | "valuation" } })
+          navigate({
+            search: { tab: value as "overview" | "siteVisit" | "valuation" },
+          })
         }
       >
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="siteVisit">Site Visit</TabsTrigger>
           <TabsTrigger value="valuation">
             Valuation
             {record.report ? (
@@ -58,6 +62,10 @@ function CaseDetailPage() {
 
         <TabsContent value="overview" className="mt-4">
           <CaseOverviewTab record={record} timeline={timelineQuery.data} />
+        </TabsContent>
+
+        <TabsContent value="siteVisit" className="mt-4">
+          <CaseSiteVisitTab record={record} />
         </TabsContent>
 
         <TabsContent value="valuation" className="mt-4">
